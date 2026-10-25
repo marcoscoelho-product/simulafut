@@ -1841,6 +1841,7 @@ function makeEngine(D) {
     const box = $('status-line'), txt = $('status-text');
     box.className = 'status-line';
     if (!live.on) { txt.textContent = D.meta.label; return; }
+    box.hidden = true; return; // on the site, the live block carries this information
     if (live.status === 'loading') { txt.textContent = 'Conferindo os jogos de hoje…'; return; }
     if (live.status === 'error') { box.classList.add('st-err'); txt.textContent = `Sem acesso ao placar ao vivo agora. ${D.meta.label}`; return; }
     const stale = live.status === 'stale';

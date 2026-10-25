@@ -428,12 +428,12 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
 
   <div class="overview" id="overview">
     <div class="viewtabs" role="tablist" aria-label="Visão inicial">
-      <button type="button" role="tab" id="tab-tabela" aria-controls="panel-tabela" aria-selected="true"><span class="lbl">Tabela</span></button>
-      <button type="button" role="tab" id="tab-titulo" aria-controls="panel-titulo" aria-selected="false" tabindex="-1"><span class="lbl">Título</span></button>
+      <button type="button" role="tab" id="tab-titulo" aria-controls="panel-titulo" aria-selected="true"><span class="lbl">Título</span></button>
       <button type="button" role="tab" id="tab-rebaixamento" aria-controls="panel-rebaixamento" aria-selected="false" tabindex="-1"><span class="lbl">Rebaixamento</span></button>
+      <button type="button" role="tab" id="tab-tabela" aria-controls="panel-tabela" aria-selected="false" tabindex="-1"><span class="lbl">Tabela</span></button>
     </div>
 
-    <section class="table-panel" id="panel-tabela" role="tabpanel" aria-labelledby="tab-tabela">
+    <section class="table-panel" id="panel-tabela" role="tabpanel" aria-labelledby="tab-tabela" hidden>
       <div class="subtoggle" role="group" aria-label="Tipo de tabela">
         <button type="button" id="tv-atual" aria-pressed="true">Atual</button>
         <button type="button" id="tv-projetada" aria-pressed="false">Projetada</button>
@@ -448,7 +448,7 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
       <p class="table-note" id="tab-note"></p>
     </section>
 
-    <section class="hero" id="panel-titulo" role="tabpanel" aria-labelledby="tab-titulo" hidden>
+    <section class="hero" id="panel-titulo" role="tabpanel" aria-labelledby="tab-titulo">
       <h2 id="h-race" class="kicker" style="font-family:var(--font-data);font-size:11.5px;font-weight:400;letter-spacing:.08em">Chance de título</h2>
       <div class="scenario-note" id="hero-scen" hidden></div>
       <div class="race" id="race"></div>
@@ -1234,9 +1234,9 @@ function makeEngine(D) {
   }
 
   // ---------- first-screen views ----------
-  const VIEWS = ['tabela', 'titulo', 'rebaixamento'];
+  const VIEWS = ['titulo', 'rebaixamento', 'tabela'];
   function showView(v, focus) {
-    if (!VIEWS.includes(v)) v = 'tabela';
+    if (!VIEWS.includes(v)) v = 'titulo';
     VIEWS.forEach(x => {
       const tab = $('tab-' + x), panel = $('panel-' + x), on = x === v;
       tab.setAttribute('aria-selected', on ? 'true' : 'false');
@@ -1244,7 +1244,6 @@ function makeEngine(D) {
       panel.hidden = !on;
       if (on && focus) tab.focus();
     });
-    try { localStorage.setItem('brasileirao-aba', v); } catch (e) {}
   }
   function setTableView(tv) {
     if (tv !== 'atual' && tv !== 'projetada') tv = 'atual';
@@ -1277,9 +1276,9 @@ function makeEngine(D) {
     });
     window.addEventListener('hashchange', applyHash);
     if (!applyHash()) {
-      let v = 'tabela', tv = 'atual';
-      try { v = localStorage.getItem('brasileirao-aba') || 'tabela'; tv = localStorage.getItem('brasileirao-table') || 'atual'; } catch (e) {}
-      showView(v); setTableView(tv);
+      let tv = 'atual';
+      try { tv = localStorage.getItem('brasileirao-table') || 'atual'; } catch (e) {}
+      showView('titulo'); setTableView(tv);
     }
   }
 

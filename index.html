@@ -276,7 +276,7 @@ table.bt thead th { font-family: var(--font-data); font-size: 11px; font-weight:
 table.bt td { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
 table.bt td:first-child { font-family: var(--font-body); }
 .bt-wrap { overflow-x: auto; }
-footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 14px; display: grid; gap: 4px; }
+footer { font-size: 13px; color: var(--muted); padding-top: 4px; display: grid; gap: 4px; }
 footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
 
 /* scenario bar */
@@ -303,6 +303,26 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
 .bstrip i { display: block; height: 7px; border-radius: 2px; }
 .bstrip.sm { margin-bottom: 6px; }
 .bstrip.sm i { height: 4px; }
+
+/* general sections start folded: a short overview first, details on demand */
+.fold-sec { margin-top: -16px; }
+.fold-sec + .fold-sec { margin-top: -40px; }
+.fold-sec:last-of-type .fold { border-bottom: 1px solid var(--rule-strong); }
+.fold { border-top: 1px solid var(--rule-strong); }
+.fold > summary { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 0; cursor: pointer; }
+.fold > summary::-webkit-details-marker { display: none; }
+.fold-h { display: grid; gap: 6px; min-width: 0; }
+.fold-h h2 { font-size: clamp(1.45rem, 5vw, 1.8rem); color: var(--ink); }
+.fold-sub { font-size: 14px; color: var(--ink-2); }
+.fold-ic { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--rule-strong); position: relative; transition: transform .25s, background .2s; }
+.fold-ic::before, .fold-ic::after { content: ""; position: absolute; left: 50%; top: 50%; width: 12px; height: 2px; margin: -1px 0 0 -6px; border-radius: 1px; background: var(--ink); transition: transform .25s; }
+.fold-ic::after { transform: rotate(90deg); }
+.fold[open] .fold-ic::after { transform: rotate(0deg); }
+.fold > summary:hover .fold-ic { background: var(--surface); }
+.fold[open] .fold-sub { display: none; }
+.fold-body { padding-bottom: 8px; display: grid; gap: 16px; }
+.fold-desc { color: var(--ink-2); max-width: 62ch; }
+.method .fold-body { gap: 24px; }
 
 /* freshness line */
 .status-line { display: flex; align-items: baseline; gap: 8px; font-size: 13.5px; color: var(--ink-2); max-width: 62ch; }
@@ -515,24 +535,26 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
 
   </div>
 
-  <section id="simulador" aria-labelledby="h-sim">
-    <div class="section-head">
-      <h2 id="h-sim">E se…?</h2>
-      <p>Fixe o resultado de qualquer jogo restante. O seu aparelho roda 30 mil temporadas de novo com esses resultados e atualiza o título, o rebaixamento, a tabela projetada e as posições finais. Um resultado fixado também conta como evidência sobre a força dos times, como aconteceria se o jogo tivesse sido disputado.</p>
-    </div>
+  <section class="fold-sec" id="simulador" aria-labelledby="h-sim">
+    <details class="fold">
+      <summary><span class="fold-h"><h2 id="h-sim">E se…?</h2><span class="fold-sub">Fixe resultados e veja as chances mudarem</span></span><span class="fold-ic" aria-hidden="true"></span></summary>
+      <div class="fold-body">
+      <p class="fold-desc">Fixe o resultado de qualquer jogo restante. O seu aparelho roda 30 mil temporadas de novo com esses resultados e atualiza o título, o rebaixamento, a tabela projetada e as posições finais. Um resultado fixado também conta como evidência sobre a força dos times, como aconteceria se o jogo tivesse sido disputado.</p>
     <div class="sim-tools">
       <label for="fx-filter">Mostrar</label>
       <select id="fx-filter"></select>
       <button type="button" class="ghost" id="clear-all" disabled>Limpar resultados</button>
     </div>
     <div class="rounds" id="rounds"></div>
+      </div>
+    </details>
   </section>
 
-  <section id="posicoes" aria-labelledby="h-pos">
-    <div class="section-head">
-      <h2 id="h-pos">Onde cada time termina</h2>
-      <p>Probabilidade de cada posição final; a legenda abaixo dá a faixa de cada cor. Toque numa casa para ver o número.</p>
-    </div>
+  <section class="fold-sec" id="posicoes" aria-labelledby="h-pos">
+    <details class="fold">
+      <summary><span class="fold-h"><h2 id="h-pos">Onde cada time termina</h2><span class="fold-sub">A chance de cada posição final, time a time</span></span><span class="fold-ic" aria-hidden="true"></span></summary>
+      <div class="fold-body">
+      <p class="fold-desc">Probabilidade de cada posição final; a legenda abaixo dá a faixa de cada cor. Toque numa casa para ver o número.</p>
     <div class="heat-wrap" id="heat-wrap">
       <div class="heat" id="heat" aria-hidden="true"></div>
       <div class="heat-legend" id="heat-legend"></div>
@@ -541,18 +563,24 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
         <div class="mini-wrap"><table class="mini" id="heat-table"></table></div>
       </details>
     </div>
+      </div>
+    </details>
   </section>
 
-  <section id="forca" aria-labelledby="h-str">
-    <div class="section-head">
-      <h2 id="h-str">Força dos times</h2>
-      <p>Saldo de gols esperado por jogo contra um adversário médio da Série A 2026, metade em casa e metade fora. É o que o modelo usa para simular, e explica por que um time atrás na tabela pode ser favorito.</p>
-    </div>
+  <section class="fold-sec" id="forca" aria-labelledby="h-str">
+    <details class="fold">
+      <summary><span class="fold-h"><h2 id="h-str">Força dos times</h2><span class="fold-sub">Quem o modelo considera mais forte</span></span><span class="fold-ic" aria-hidden="true"></span></summary>
+      <div class="fold-body">
+      <p class="fold-desc">Saldo de gols esperado por jogo contra um adversário médio da Série A 2026, metade em casa e metade fora. É o que o modelo usa para simular, e explica por que um time atrás na tabela pode ser favorito.</p>
     <div class="str" id="str"></div>
+      </div>
+    </details>
   </section>
 
-  <section id="metodo" class="method" aria-labelledby="h-met">
-    <h2 id="h-met">Como funciona</h2>
+  <section id="metodo" class="fold-sec method" aria-labelledby="h-met">
+    <details class="fold">
+      <summary><span class="fold-h"><h2 id="h-met">Como funciona</h2><span class="fold-sub">O modelo, a validação e as fontes</span></span><span class="fold-ic" aria-hidden="true"></span></summary>
+      <div class="fold-body">
     <section>
       <h3>O modelo</h3>
       <ul id="m-model"></ul>
@@ -643,6 +671,8 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
         <li>Valor de mercado dos elencos: Transfermarkt, via <a href="https://exame.com/esporte/elencos-mais-valiosos-do-brasileirao-time-do-g4-surpreende-por-colocacao-no-ranking/" target="_blank" rel="noopener">Exame</a> (05/10/2026).</li>
       </ul>
     </section>
+      </div>
+    </details>
   </section>
 
   <footer>
@@ -2126,6 +2156,14 @@ function makeEngine(D) {
   $('clear-all').addEventListener('click', clearAll);
   renderLede(); buildFilter(); renderDeciders(); renderFixtures(); renderMethod(); setupTip(); setupViews(); renderAll();
   try { setupLive(); } catch (e) { console.error('simulafut live', e); }
+  function openFoldFromHash() {
+    const id = location.hash.slice(1); const sec = id && document.getElementById(id);
+    const d = sec && (sec.matches('.fold-sec') ? sec.querySelector('details.fold') : sec.closest('details.fold'));
+    if (d) { d.open = true; sec.scrollIntoView(); }
+  }
+  window.addEventListener('hashchange', openFoldFromHash); openFoldFromHash();
+  document.querySelectorAll('details.fold').forEach(d => d.addEventListener('toggle', () => { if (d.open) { renderStrength(); } }));
+
   window.matchMedia('(max-width: 560px)').addEventListener('change', renderStrength);
 })();
 </script>

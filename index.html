@@ -290,6 +290,16 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
 .tip { position: fixed; z-index: 30; pointer-events: none; background: var(--sel); color: var(--sel-ink); font-size: 12.5px; padding: 6px 9px; border-radius: 6px; max-width: 220px; line-height: 1.35; }
 .tip b { font-weight: 700; }
 
+/* brand: the 20-position strip (G4 blues to Z4 reds) is the Simulafut signature */
+.brandbar { display: grid; gap: 12px; margin-bottom: -16px; }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--ink); }
+.bmark { width: 28px; height: 28px; flex: none; }
+.wordmark { font-family: var(--font-display); font-weight: 800; font-size: 24px; letter-spacing: .06em; text-transform: uppercase; line-height: 1; }
+.bstrip { display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 3px; }
+.bstrip i { display: block; height: 7px; border-radius: 2px; }
+.bstrip.sm { margin-bottom: 6px; }
+.bstrip.sm i { height: 4px; }
+
 /* freshness line */
 .status-line { display: flex; align-items: baseline; gap: 8px; font-size: 13.5px; color: var(--ink-2); max-width: 62ch; }
 .status-line .sdot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--rule-strong); transform: translateY(-1px); }
@@ -397,6 +407,10 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
 </head>
 <body>
 <main class="page" id="page">
+  <div class="brandbar">
+    <div class="brand"><svg class="bmark" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="currentColor"/><circle cx="32" cy="32" r="21" fill="var(--bg)"/><polygon points="32,22 41.51,28.91 37.88,40.09 26.12,40.09 22.49,28.91" fill="currentColor"/><g stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="32" y1="22" x2="32" y2="11.5"/><line x1="41.51" y1="28.91" x2="51.5" y2="25.66"/><line x1="37.88" y1="40.09" x2="44.05" y2="48.58"/><line x1="26.12" y1="40.09" x2="19.95" y2="48.58"/><line x1="22.49" y1="28.91" x2="12.5" y2="25.66"/></g></svg><span class="wordmark">Simulafut</span></div>
+    <div class="bstrip" aria-hidden="true"><i style="background:#0d366b"></i><i style="background:#0d366b"></i><i style="background:#0d366b"></i><i style="background:#184f95"></i><i style="background:#184f95"></i><i style="background:#256abf"></i><i style="background:#256abf"></i><i style="background:#256abf"></i><i style="background:#3987e5"></i><i style="background:#3987e5"></i><i style="background:#6da7ec"></i><i style="background:#6da7ec"></i><i style="background:#9ec5f4"></i><i style="background:#9ec5f4"></i><i style="background:#cde2fb"></i><i style="background:#cde2fb"></i><i style="background:#d03b3b;opacity:.35"></i><i style="background:#d03b3b;opacity:.57"></i><i style="background:#d03b3b;opacity:.78"></i><i style="background:#d03b3b"></i></div>
+  </div>
   <header class="top">
     <p class="eyebrow">Série A 2026 · simulação Monte Carlo</p>
     <h1>Quem leva o Brasileirão</h1>
@@ -628,6 +642,7 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
   </section>
 
   <footer>
+    <div class="bstrip sm" aria-hidden="true"><i style="background:#0d366b"></i><i style="background:#0d366b"></i><i style="background:#0d366b"></i><i style="background:#184f95"></i><i style="background:#184f95"></i><i style="background:#256abf"></i><i style="background:#256abf"></i><i style="background:#256abf"></i><i style="background:#3987e5"></i><i style="background:#3987e5"></i><i style="background:#6da7ec"></i><i style="background:#6da7ec"></i><i style="background:#9ec5f4"></i><i style="background:#9ec5f4"></i><i style="background:#cde2fb"></i><i style="background:#cde2fb"></i><i style="background:#d03b3b;opacity:.35"></i><i style="background:#d03b3b;opacity:.57"></i><i style="background:#d03b3b;opacity:.78"></i><i style="background:#d03b3b"></i></div>
     <p class="credit">Criado por Marcos Paulo Coelho com Claude Opus 5.5.</p>
     <p id="foot"></p>
   </footer>

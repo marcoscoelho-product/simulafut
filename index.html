@@ -71,7 +71,8 @@
 * { box-sizing: border-box; }
 [hidden]:not([hidden=until-found i]) { display: none !important; }
 body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15.5px; line-height: 1.5; -webkit-text-size-adjust: 100%; }
-.page { max-width: 780px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 56px; display: grid; gap: 40px; }
+.page { max-width: 780px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 14px 56px; display: grid; gap: 40px; }
+.brandbar + .top, .top + .live, .live + .overview, .top + .overview { margin-top: -18px; }
 .page.has-bar { padding-block-end: 132px; }
 h1, h2, h3 { font-family: var(--font-display); font-weight: 800; letter-spacing: 0.005em; line-height: 1; margin: 0; text-wrap: balance; }
 h1 { font-size: clamp(2.6rem, 10vw, 3.9rem); text-transform: uppercase; white-space: nowrap; overflow: hidden; max-width: 100%; line-height: 1.15; padding-top: .05em; }
@@ -89,7 +90,7 @@ button { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* header */
-.top { display: grid; gap: 12px; padding-top: 8px; }
+.top { display: grid; gap: 6px; padding-top: 0; }
 
 /* hero */
 .hero { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; padding: 20px 18px 18px; display: grid; gap: 16px; }
@@ -296,12 +297,12 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
 .tip b { font-weight: 700; }
 
 /* brand: the 20-position strip (G4 blues to Z4 reds) is the Simulafut signature */
-.brandbar { display: grid; gap: 12px; margin-bottom: -16px; }
+.brandbar { display: grid; gap: 8px; margin-bottom: -10px; }
 .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); }
-.bmark { width: 28px; height: 28px; flex: none; }
-.wordmark { font-family: var(--font-display); font-weight: 800; font-size: 24px; letter-spacing: .06em; text-transform: uppercase; line-height: 1; }
+.bmark { width: 20px; height: 20px; flex: none; }
+.wordmark { font-family: var(--font-display); font-weight: 800; font-size: 17px; letter-spacing: .06em; text-transform: uppercase; line-height: 1; }
 .bstrip { display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 3px; }
-.bstrip i { display: block; height: 7px; border-radius: 2px; }
+.bstrip i { display: block; height: 5px; border-radius: 2px; }
 .bstrip.sm { margin-bottom: 6px; }
 .bstrip.sm i { height: 4px; }
 
@@ -456,7 +457,6 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
     <div class="bstrip" aria-hidden="true"><i style="background:#0d366b"></i><i style="background:#0d366b"></i><i style="background:#0d366b"></i><i style="background:#184f95"></i><i style="background:#184f95"></i><i style="background:#256abf"></i><i style="background:#256abf"></i><i style="background:#256abf"></i><i style="background:#3987e5"></i><i style="background:#3987e5"></i><i style="background:#6da7ec"></i><i style="background:#6da7ec"></i><i style="background:#9ec5f4"></i><i style="background:#9ec5f4"></i><i style="background:#cde2fb"></i><i style="background:#cde2fb"></i><i style="background:#d03b3b;opacity:.35"></i><i style="background:#d03b3b;opacity:.57"></i><i style="background:#d03b3b;opacity:.78"></i><i style="background:#d03b3b"></i></div>
   </div>
   <header class="top">
-    <p class="eyebrow">Série A 2026 · simulação Monte Carlo</p>
     <h1>Quem leva o Brasileirão</h1>
     <p class="lede" id="lede"></p>
     <p class="status-line" id="status-line" role="status"><span class="sdot" aria-hidden="true"></span><span id="status-text"></span></p>
@@ -988,7 +988,7 @@ function makeEngine(D) {
     const played = m.n_played + done, rem = m.n_rem - done - on;
     const counts = on ? `${nf0.format(played)} jogos disputados, ${on} em andamento e ${rem} a disputar.` : `${nf0.format(played)} jogos disputados e ${rem} a disputar.`;
     const sims = live.res ? nf0.format(SIMS) : nf0.format(D.models.xg.sims);
-    $('lede').textContent = `${counts} Cada simulação sorteia as forças dos times e os placares de todos os jogos restantes; ${sims} temporadas completas formam as chances abaixo.`;
+    $('lede').textContent = `Chances de título, G4 e rebaixamento na Série A 2026, em ${sims} temporadas simuladas${live.res ? ' com os placares de agora' : ''}.`;
     $('foot').textContent = `Modelo ajustado com ${nf0.format(m.n_hist)} jogos da Série A (2003–2026). Atualização completa em ${m.label_short}.`;
   }
 

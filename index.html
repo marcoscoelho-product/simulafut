@@ -324,6 +324,19 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
 .fold-desc { color: var(--ink-2); max-width: 62ch; }
 .method .fold-body { gap: 24px; }
 
+.sfold { display: block; padding-top: 0; }
+.sfold + .sfold { margin-top: -16px; }
+.sfold:not([open]) > .sfold-body, .fold:not([open]) > .fold-body { display: none; }
+.sfold > summary { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; cursor: pointer; }
+.sfold > summary::-webkit-details-marker { display: none; }
+.sfold > summary, .fold > summary { color: var(--ink); }
+.sfold > summary h3 { font-size: 1.15rem; color: var(--ink); }
+.sfold-body { display: grid; gap: 6px; padding-bottom: 4px; }
+.fold-ic.sm { width: 28px; height: 28px; }
+.fold-ic.sm::before, .fold-ic.sm::after { width: 10px; margin-left: -5px; }
+.sfold[open] .fold-ic::after { transform: rotate(0deg); }
+.sfold > summary:hover .fold-ic { background: var(--bg); }
+
 /* freshness line */
 .status-line { display: flex; align-items: baseline; gap: 8px; font-size: 13.5px; color: var(--ink-2); max-width: 62ch; }
 .status-line .sdot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--rule-strong); transform: translateY(-1px); }
@@ -497,16 +510,20 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
       <div class="splitbar" id="splitbar" aria-hidden="true"></div>
       <p class="others" id="others" hidden></p>
       <p class="why" id="why"></p>
-      <div class="dec-block" id="tit-pts-block">
-        <h3>Quantos pontos dão o título?</h3>
+      <details class="dec-block sfold" id="tit-pts-block">
+        <summary><h3>Quantos pontos dão o título?</h3><span class="fold-ic sm" aria-hidden="true"></span></summary>
+        <div class="sfold-body">
         <div class="pts-wrap" id="tit-pts"></div>
         <p class="pts-cap">Chance de título com cada pontuação final. Em destaque: 95% ou mais.</p>
-      </div>
-      <div class="dec-block" id="dec-title-block">
-        <h3>Os jogos que decidem</h3>
+        </div>
+      </details>
+      <details class="dec-block sfold" id="dec-title-block">
+        <summary><h3>Os jogos que decidem</h3><span class="fold-ic sm" aria-hidden="true"></span></summary>
+        <div class="sfold-body">
         <p class="dec-desc" id="dec-desc"></p>
         <div class="deciders" id="dec-title"></div>
-      </div>
+        </div>
+      </details>
     </section>
 
     <section class="hero" id="panel-rebaixamento" role="tabpanel" aria-labelledby="tab-rebaixamento" hidden>
@@ -520,17 +537,21 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
       <p class="z4-line">“Faltam” = pontos para o risco chegar a 5% ou menos.</p>
       <ol class="z4-list" id="z4-list"></ol>
       <p class="others" id="z4-rest"></p>
-      <div class="dec-block" id="z4-pts-block">
-        <h3>Quantos pontos livram da queda?</h3>
+      <details class="dec-block sfold" id="z4-pts-block">
+        <summary><h3>Quantos pontos livram da queda?</h3><span class="fold-ic sm" aria-hidden="true"></span></summary>
+        <div class="sfold-body">
         <div class="pts-wrap" id="z4-pts"></div>
         <button type="button" class="more-btn" id="z4-pts-more" hidden></button>
         <p class="pts-cap">Risco de queda com cada pontuação final; “Média” junta todos os times. Em destaque: 5% ou menos.</p>
-      </div>
-      <div class="dec-block" id="dec-z4-block">
-        <h3>Os jogos que decidem</h3>
+        </div>
+      </details>
+      <details class="dec-block sfold" id="dec-z4-block">
+        <summary><h3>Os jogos que decidem</h3><span class="fold-ic sm" aria-hidden="true"></span></summary>
+        <div class="sfold-body">
         <p class="dec-desc">Risco de rebaixamento de cada time conforme o resultado, nas simulações do cenário base.</p>
         <div class="deciders" id="dec-z4"></div>
-      </div>
+        </div>
+      </details>
     </section>
 
   </div>

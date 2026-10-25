@@ -42,6 +42,7 @@
   --fla: #eb6834;
   --pal: #1baf7a;
   --c-yel: #eda100;
+  --seg-on: #ffffff;
   --c-mag: #e87ba4;
   --live: #d03b3b;
   --sel: #121814;
@@ -56,7 +57,7 @@
   :root:not([data-theme="light"]) {
     --bg: #0d1210; --surface: #151b18; --ink: #e7ede8; --ink-2: #aab6ae; --muted: #7f8b84;
     --rule: #242e28; --rule-strong: #35423a; --accent: #7fa6ff; --lib: #3987e5; --z4: #e66767;
-    --fla: #d95926; --pal: #199e70; --c-yel: #c98500; --c-mag: #d55181; --live: #e66767; --sel: #e7ede8; --sel-ink: #0d1210; --heat0: #1c2420;
+    --fla: #d95926; --pal: #199e70; --c-yel: #c98500; --seg-on: #2a3530; --c-mag: #d55181; --live: #e66767; --sel: #e7ede8; --sel-ink: #0d1210; --heat0: #1c2420;
     --heat1: #0d366b; --heat2: #184f95; --heat3: #256abf; --heat4: #3987e5; --heat5: #6da7ec; --heat6: #9ec5f4; --heat7: #cde2fb;
     color-scheme: dark;
   }
@@ -64,7 +65,7 @@
 :root[data-theme="dark"] {
   --bg: #0d1210; --surface: #151b18; --ink: #e7ede8; --ink-2: #aab6ae; --muted: #7f8b84;
   --rule: #242e28; --rule-strong: #35423a; --accent: #7fa6ff; --lib: #3987e5; --z4: #e66767;
-  --fla: #d95926; --pal: #199e70; --c-yel: #c98500; --c-mag: #d55181; --live: #e66767; --sel: #e7ede8; --sel-ink: #0d1210; --heat0: #1c2420;
+  --fla: #d95926; --pal: #199e70; --c-yel: #c98500; --seg-on: #2a3530; --c-mag: #d55181; --live: #e66767; --sel: #e7ede8; --sel-ink: #0d1210; --heat0: #1c2420;
   --heat1: #0d366b; --heat2: #184f95; --heat3: #256abf; --heat4: #3987e5; --heat5: #6da7ec; --heat6: #9ec5f4; --heat7: #cde2fb;
   color-scheme: dark;
 }
@@ -162,13 +163,10 @@ table.proj { border-collapse: separate; border-spacing: 0; width: 100%; min-widt
 .viewtabs button[aria-selected="true"] { color: var(--ink); }
 .viewtabs button[aria-selected="true"] .lbl::after { background: var(--ink); }
 .viewtabs button:focus-visible { outline-offset: -3px; }
-.subtoggle { display: inline-flex; justify-self: start; align-items: flex-end; gap: 22px; padding: 0 2px; border-bottom: 1px solid var(--rule); }
-.subtoggle button { position: relative; border: 0; background: transparent; padding: 6px 0 11px; min-height: 36px; font-family: var(--font-data); font-size: 12px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); cursor: pointer; transition: color .2s; }
-.subtoggle button:hover { color: var(--ink-2); }
-.subtoggle button::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 4px; border-radius: 2px; opacity: 0; transform: scaleX(.6); transform-origin: left; transition: opacity .25s, transform .25s;
-  background: linear-gradient(90deg, #0d366b 0 18%, transparent 18% 20.5%, #256abf 20.5% 38.5%, transparent 38.5% 41%, #6da7ec 41% 59%, transparent 59% 61.5%, #cde2fb 61.5% 79.5%, transparent 79.5% 82%, #d03b3b 82% 100%); }
-.subtoggle button[aria-pressed="true"] { color: var(--ink); }
-.subtoggle button[aria-pressed="true"]::after { opacity: 1; transform: none; }
+.subtoggle { display: inline-flex; justify-self: start; gap: 2px; padding: 3px; border-radius: 999px; background: color-mix(in srgb, var(--ink) 6%, var(--bg)); box-shadow: inset 0 0 0 1px var(--rule); }
+.subtoggle button { border: 0; background: transparent; border-radius: 999px; padding: 6px 16px; min-height: 32px; font-size: 13.5px; font-weight: 600; color: var(--ink-2); cursor: pointer; transition: background .2s, color .2s, box-shadow .2s; }
+.subtoggle button:hover { color: var(--ink); }
+.subtoggle button[aria-pressed="true"] { background: var(--seg-on); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 0 0 1px var(--rule-strong); }
 .c-pts { font-weight: 700; }
 .z4-lead { font-size: 16.5px; line-height: 1.45; max-width: 60ch; }
 .slots-wrap { display: grid; gap: 6px; }

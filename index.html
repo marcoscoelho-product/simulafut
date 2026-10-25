@@ -69,6 +69,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden]:not([hidden=until-found i]) { display: none !important; }
 body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15.5px; line-height: 1.5; -webkit-text-size-adjust: 100%; }
 .page { max-width: 780px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 56px; display: grid; gap: 40px; }
 .page.has-bar { padding-block-end: 132px; }
@@ -351,6 +352,8 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
 .lc-table table { margin-top: 8px; border-collapse: collapse; font-family: var(--font-data); font-size: 12px; font-variant-numeric: tabular-nums; }
 .lc-table th, .lc-table td { padding: 3px 10px 3px 0; text-align: right; border-bottom: 1px solid var(--rule); }
 .lc-table th:first-child, .lc-table td:first-child { text-align: left; }
+.live-empty { color: var(--ink-2); font-size: 14.5px; max-width: 62ch; }
+.live-next { font-family: var(--font-data); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 4px 0 -6px; }
 .live-foot { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 12px; }
 .fx-live { font-family: var(--font-data); font-size: 13px; color: var(--ink-2); text-align: right; }
 .fx-live.on { color: var(--live); }
@@ -402,6 +405,7 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
       <h2 class="live-title" id="live-h"><span class="ldot" aria-hidden="true"></span><span id="live-h-txt">Ao vivo</span></h2>
       <span class="live-upd" id="live-upd"></span>
     </div>
+    <p class="live-empty" id="live-empty" hidden></p>
     <ul class="live-games" id="live-games"></ul>
     <div id="live-moves" hidden>
       <h3 class="live-sub" id="live-moves-h">Antes dos jogos → agora</h3>
@@ -1626,7 +1630,10 @@ function makeEngine(D) {
     const lo = addDays(today, -7);
     for (let d = addDays(D.meta.now, -1); d < today; d = addDays(d, 1)) if (d >= lo) out.add(d);
     D.fixtures.forEach(f => { if (f.d && f.d < today && f.d >= lo) out.add(f.d); });
-    return [...out].sort().slice(-8);
+    const nextDay = D.fixtures.map(f => f.d).filter(d => d && d > today).sort()[0];
+    const res = [...out].sort().slice(-8);
+    if (nextDay && nextDay <= addDays(today, 10)) res.push(nextDay);
+    return res;
   }
   async function fetchDay(day) {
     const ctl = typeof AbortController === 'function' ? new AbortController() : null;
@@ -1654,9 +1661,9 @@ function makeEngine(D) {
     }
     const byId = new Map();
     if (!first) live.games.forEach(g => byId.set(g.id, g));
-    evs.forEach(ev => { const g = parseEvent(ev); if (g) byId.set(g.id, g); });
+    evs.forEach(ev => { try { const g = parseEvent(ev); if (g) byId.set(g.id, g); } catch (e) { console.error('simulafut evento', e); } });
     live.games = [...byId.values()].sort((x, y) => (x.kickoff || 0) - (y.kickoff || 0));
-    applyLive();
+    try { applyLive(); } catch (e) { console.error('simulafut live', e); }
     // next check: every minute while a game is on; otherwise at the next kickoff (at most 15 min away)
     const now = Date.now();
     const on = live.games.some(g => g.phase === 'in' || g.phase === 'ht');
@@ -1846,15 +1853,18 @@ function makeEngine(D) {
     }
     box.classList.add(stale ? 'st-err' : 'st-ok');
     const what = done.length ? ` inclui ${done.length === 1 ? 'o jogo encerrado' : `os ${done.length} jogos encerrados`} depois da última atualização completa.` : ' inclui todos os jogos já disputados.';
-    const nx = nextGameText();
-    txt.replaceChildren(el('b', null, stale ? 'Sem conexão agora:' : 'Em dia:'), document.createTextNode(what + (nx ? ` Próximo jogo: ${nx}.` : '')));
+    txt.replaceChildren(el('b', null, stale ? 'Sem conexão agora:' : 'Em dia:'), document.createTextNode(what));
   }
   function signed(d) { const v = Math.round(d * 100); return v === 0 ? '0' : (v > 0 ? '+' : '−') + Math.abs(v); }
   function renderLive() {
     const box = $('live');
     const applied = appliedGames();
-    if (!live.on || !applied.length) { box.hidden = true; return; }
+    if (!live.on) { box.hidden = true; return; }
     box.hidden = false;
+    const empty = !applied.length;
+    $('live-empty').hidden = !empty;
+    if (empty) { renderLiveEmpty(); return; }
+    $('live-foot').hidden = false;
     const playing = applied.some(g => g.phase !== 'post');
     box.classList.toggle('is-live', playing && live.status === 'ok');
     $('live-h-txt').textContent = playing ? 'Ao vivo' : 'Jogos de hoje';
@@ -1881,6 +1891,38 @@ function makeEngine(D) {
     renderMoves();
     renderChart();
     $('live-foot').textContent = `Placar ao vivo: ESPN. As chances são recalculadas no seu aparelho a cada minuto, com ${nf0.format(SIMS)} temporadas simuladas; num jogo em andamento, os gols que faltam são sorteados pelo tempo que resta. Expulsões não entram. A atualização completa do modelo sai na manhã seguinte.`;
+  }
+  function upcoming() {
+    const now = Date.now();
+    const fromFeed = live.games.filter(g => g.phase === 'pre' && g.kickoff && g.kickoff > now - 3 * 3600000).sort((a, b) => a.kickoff - b.kickoff);
+    if (fromFeed.length) { const d = ymd(fromFeed[0].kickoff); return fromFeed.filter(g => ymd(g.kickoff) === d); }
+    const today = ymd(now);
+    const fs = D.fixtures.filter(f => f.d && f.d >= today && !liveGame(f.i)).sort((a, b) => a.d.localeCompare(b.d));
+    if (!fs.length) return [];
+    return fs.filter(f => f.d === fs[0].d).map(f => ({ h: f.h, a: f.a, phase: 'pre', day: f.d }));
+  }
+  function renderLiveEmpty() {
+    const box = $('live');
+    box.classList.remove('is-live');
+    $('live-h-txt').textContent = 'Ao vivo';
+    $('live-upd').textContent = live.status === 'error' || live.status === 'stale' ? 'sem acesso ao placar agora' : '';
+    $('live-moves').hidden = true; $('lc').hidden = true; $('live-foot').hidden = true;
+    const ups = upcoming();
+    let txt = 'Aqui você acompanha as probabilidades em tempo real quando houver jogos em andamento.';
+    if (ups.length) {
+      const g = ups[0], day = g.kickoff ? ymd(g.kickoff) : g.day, rel = dayLabel(day);
+      const when = /,/.test(rel) ? rel : `${rel}, ${fmtWD.format(new Date(day + 'T15:00:00Z')).replace('.', '')} ${day.slice(8, 10)}/${day.slice(5, 7)}`;
+      txt += ` Próxim${ups.length > 1 ? 'os jogos' : 'o jogo'}: ${when}.`;
+    }
+    $('live-empty').textContent = txt;
+    const ul = $('live-games'); ul.replaceChildren();
+    ups.forEach(g => {
+      const li = el('li', 'lg pre');
+      const th = el('span', 't h'); th.append(el('span', 'full', g.h), el('span', 'abbr', byName[g.h].abbr));
+      const ta = el('span', 't a'); ta.append(el('span', 'full', g.a), el('span', 'abbr', byName[g.a].abbr));
+      li.append(th, el('span', 'sc', '×'), ta, el('span', 'ck', g.kickoff ? hm(g.kickoff) : ''));
+      ul.append(li);
+    });
   }
   function renderMoves() {
     const box = $('live-moves'), tb = $('live-delta');
@@ -2029,6 +2071,7 @@ function makeEngine(D) {
   function setupLive() {
     renderStatus();
     if (!live.on) return;
+    renderLive();
     ['titulo', 'z4'].forEach(v => $('lc-' + v).addEventListener('click', () => { live.view = v; live.viewByUser = true; live.hover = null; renderChart(); }));
     let rt = null;
     window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(renderChart, 150); });
@@ -2059,7 +2102,8 @@ function makeEngine(D) {
   window.addEventListener('resize', fitTabs);
   $('sb-clear').addEventListener('click', clearAll);
   $('clear-all').addEventListener('click', clearAll);
-  renderLede(); buildFilter(); renderDeciders(); renderFixtures(); renderMethod(); setupTip(); setupViews(); renderAll(); setupLive();
+  renderLede(); buildFilter(); renderDeciders(); renderFixtures(); renderMethod(); setupTip(); setupViews(); renderAll();
+  try { setupLive(); } catch (e) { console.error('simulafut live', e); }
   window.matchMedia('(max-width: 560px)').addEventListener('change', renderStrength);
 })();
 </script>

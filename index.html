@@ -197,7 +197,11 @@ table.proj { border-collapse: separate; border-spacing: 0; width: 100%; min-widt
 .ptstrip .key-sm { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: 1px; }
 .pts-cap { font-size: 12.5px; color: var(--muted); }
 .table-panel { display: grid; gap: 10px; }
-.tab-desc { font-size: 14.5px; color: var(--ink-2); max-width: 62ch; }
+.tab-desc { font-size: 14.5px; color: var(--ink-2); max-width: 62ch; min-height: 3em; }
+/* same row height and first columns in both views, so switching Atual/Projetada doesn't shift the table */
+.proj tbody td { height: 46px; padding-top: 4px; padding-bottom: 4px; }
+.proj .c-club { width: 10rem; }
+.pcell .d, .c-proj .rng, .c-now .rng { line-height: 1.1; }
 .table-panel .table-note { margin-top: 0; }
 .table-note { font-size: 12.5px; color: var(--muted); margin-top: 8px; }
 
@@ -373,7 +377,7 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
   table.proj { min-width: 0; }
   .proj th, .proj td { padding: 7px 4px; }
   .pcell { min-width: 44px; }
-  .proj .c-club { left: 26px; }
+  .proj .c-club { left: 26px; width: 3.6rem; }
   .proj .c-pos { width: 26px; padding-left: 6px; }
   .str { grid-template-columns: 2.6rem minmax(0, 1fr) 3.2rem; }
 }
@@ -1059,8 +1063,7 @@ function makeEngine(D) {
       const onNow = CUR && Object.values(CUR).some(x => x.live);
       $('tab-desc').textContent = (onNow
         ? 'Classificação ao vivo: os jogos em andamento contam com o placar de agora (● = jogando).'
-        : `Classificação com os ${nf0.format(D.meta.n_played + (live.arr ? live.arr.mode.filter(x => x === 1).length : 0))} jogos já disputados.`)
-        + (scen ? ' Os resultados fixados no simulador entram na tabela projetada.' : '');
+        : `Classificação com os ${nf0.format(D.meta.n_played + (live.arr ? live.arr.mode.filter(x => x === 1).length : 0))} jogos já disputados.`);
       $('tab-note').textContent = 'Desempate: vitórias, saldo de gols e gols marcados. Faixa lateral: G4 e G6 em azul, Z4 em vermelho.';
       return;
     }
@@ -1090,11 +1093,11 @@ function makeEngine(D) {
       body.append(tr);
     });
     $('tab-desc').textContent = scen
-      ? `Cenário com ${state.fixed.size} resultado${state.fixed.size > 1 ? 's' : ''} fixado${state.fixed.size > 1 ? 's' : ''}. As setas mostram a mudança, em pontos percentuais, em relação ao cenário base${live.res ? ' (os placares de agora)' : ''}.`
+      ? `Cenário com ${state.fixed.size} resultado${state.fixed.size > 1 ? 's' : ''} fixado${state.fixed.size > 1 ? 's' : ''}; setas: mudança vs. cenário base.`
       : live.res
-        ? `Ao vivo: como a tabela deve terminar, com os placares de agora, pela média de ${nf0.format(SIMS)} temporadas simuladas. As setas mostram a mudança, em pontos percentuais, desde antes dos jogos.`
-        : `Como a tabela deve terminar, pela média das ${nf0.format(D.models.xg.sims)} temporadas simuladas, com a chance de cada time em cada destino.`;
-    $('tab-note').textContent = 'Ordem pela pontuação final média nas simulações; # é a posição projetada. Pts traz essa média e, embaixo, a faixa onde caem 90% das simulações. Hoje mostra a posição e os pontos atuais. — = não aconteceu em nenhuma simulação. Faixa lateral: G4 e G6 em azul, Z4 em vermelho.';
+        ? 'Ao vivo: como a tabela deve terminar, com os placares de agora.'
+        : `Como a tabela deve terminar, em ${nf0.format(D.models.xg.sims)} temporadas simuladas.`;
+    $('tab-note').textContent = (live.res && !scen ? 'Setas: mudança em pontos percentuais desde antes dos jogos. ' : '') + 'Ordem pela pontuação final média nas simulações; # é a posição projetada. Pts traz essa média e, embaixo, a faixa onde caem 90% das simulações. Hoje mostra a posição e os pontos atuais. — = não aconteceu em nenhuma simulação. Faixa lateral: G4 e G6 em azul, Z4 em vermelho.';
   }
 
   // ---------- relegation view ----------

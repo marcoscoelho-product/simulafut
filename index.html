@@ -347,11 +347,17 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
 
 /* live block */
-.live { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; padding: 16px 18px 18px; display: grid; gap: 16px; }
-.live-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px 12px; flex-wrap: wrap; }
+.live { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; padding: 14px 18px; }
+.live-head { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; color: var(--ink); }
+.live-head::-webkit-details-marker { display: none; }
+.live-hl { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; min-width: 0; }
+.live-d[open] .fold-ic::after { transform: rotate(0deg); }
+.live-d:not([open]) > .live-body { display: none; }
+.live-body { display: grid; gap: 16px; padding-top: 16px; }
+.live.is-live .live-title .ldot { box-shadow: 0 0 0 0 var(--live); animation: pulse 1.2s ease-in-out infinite, ring 1.6s ease-out infinite; }
+@keyframes ring { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--live) 55%, transparent); } 100% { box-shadow: 0 0 0 9px transparent; } }
 .live-title { display: flex; align-items: center; gap: 8px; font-family: var(--font-data); font-size: 12px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--ink); }
 .live-title .ldot { width: 9px; height: 9px; border-radius: 50%; background: var(--live); }
-.live.is-live .live-title .ldot { animation: pulse 1.6s ease-in-out infinite; }
 .live:not(.is-live) .live-title .ldot { background: var(--muted); }
 .live-upd { font-size: 12.5px; color: var(--muted); }
 .live-games { list-style: none; margin: 0; padding: 0; display: grid; }
@@ -456,10 +462,13 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
   </header>
 
   <section class="live" id="live" hidden aria-labelledby="live-h">
-    <div class="live-head">
-      <h2 class="live-title" id="live-h"><span class="ldot" aria-hidden="true"></span><span id="live-h-txt">Ao vivo</span></h2>
-      <span class="live-upd" id="live-upd"></span>
-    </div>
+   <details class="live-d" id="live-d">
+    <summary class="live-head">
+      <span class="live-hl"><h2 class="live-title" id="live-h"><span class="ldot" aria-hidden="true"></span><span id="live-h-txt">Ao vivo</span></h2>
+      <span class="live-upd" id="live-upd"></span></span>
+      <span class="fold-ic sm" aria-hidden="true"></span>
+    </summary>
+    <div class="live-body">
     <p class="live-empty" id="live-empty" hidden></p>
     <ul class="live-games" id="live-games"></ul>
     <div id="live-moves" hidden>
@@ -479,6 +488,8 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
       <details class="lc-table"><summary>Ver os números</summary><div id="lc-table"></div></details>
     </div>
     <p class="live-foot" id="live-foot"></p>
+    </div>
+   </details>
   </section>
 
   <div class="overview" id="overview">
@@ -1941,7 +1952,7 @@ function makeEngine(D) {
     const playing = applied.some(g => g.phase !== 'post');
     box.classList.toggle('is-live', playing && live.status === 'ok');
     $('live-h-txt').textContent = playing ? 'Ao vivo' : 'Jogos de hoje';
-    $('live-upd').textContent = live.lastOk ? `${live.status === 'stale' ? 'sem conexão · última leitura' : 'atualizado'} ${ago(live.lastOk)}` : '';
+    $('live-upd').textContent = liveUpd();
     // the games of the days that have applied games
     const days = new Set(applied.map(g => ymd(g.kickoff || live.lastOk)));
     const rank = g => ({ in: 0, ht: 0, pre: 1, post: 2, off: 3 })[g.phase];
@@ -1978,7 +1989,9 @@ function makeEngine(D) {
     const box = $('live');
     box.classList.remove('is-live');
     $('live-h-txt').textContent = 'Ao vivo';
-    $('live-upd').textContent = live.status === 'error' || live.status === 'stale' ? 'sem acesso ao placar agora' : '';
+    { const u = upcoming(), g = u[0]; let t = live.status === 'error' || live.status === 'stale' ? 'sem acesso ao placar agora' : 'nenhum jogo agora';
+      if (g && live.status !== 'error') { const day = g.kickoff ? ymd(g.kickoff) : g.day; t = `próximo: ${dayLabel(day)}${g.kickoff ? ', ' + hm(g.kickoff) : ''}`; }
+      $('live-upd').textContent = t; }
     $('live-moves').hidden = true; $('lc').hidden = true; $('live-foot').hidden = true;
     const ups = upcoming();
     let txt = 'Aqui você acompanha as probabilidades em tempo real quando houver jogos em andamento.';
@@ -1996,6 +2009,12 @@ function makeEngine(D) {
       li.append(th, el('span', 'sc', '×'), ta, el('span', 'ck', g.kickoff ? hm(g.kickoff) : ''));
       ul.append(li);
     });
+  }
+  function liveUpd() {
+    const applied = appliedGames(), on = applied.filter(g => g.phase !== 'post').length;
+    if (!applied.length) return '';
+    const when = live.lastOk ? `${live.status === 'stale' ? 'sem conexão, última leitura' : 'atualizado'} ${ago(live.lastOk)}` : '';
+    return on ? `${on} jogo${on > 1 ? 's' : ''} em andamento · ${when}` : `${applied.length} encerrado${applied.length > 1 ? 's' : ''} · ${when}`;
   }
   function renderMoves() {
     const box = $('live-moves'), tb = $('live-delta');
@@ -2145,6 +2164,7 @@ function makeEngine(D) {
     renderStatus();
     if (!live.on) return;
     renderLive();
+    $('live-d').addEventListener('toggle', () => { if ($('live-d').open) renderChart(); });
     ['titulo', 'z4'].forEach(v => $('lc-' + v).addEventListener('click', () => { live.view = v; live.viewByUser = true; live.hover = null; renderChart(); }));
     let rt = null;
     window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(renderChart, 150); });
@@ -2153,7 +2173,7 @@ function makeEngine(D) {
       else { clearTimeout(live.timer); live.timer = null; }
     });
     window.addEventListener('online', () => poll(false));
-    setInterval(() => { if (document.visibilityState === 'visible') { renderStatus(); if (!$('live').hidden && live.lastOk) $('live-upd').textContent = `${live.status === 'stale' ? 'sem conexão · última leitura' : 'atualizado'} ${ago(live.lastOk)}`; } }, 10000);
+    setInterval(() => { if (document.visibilityState === 'visible') { renderStatus(); if (!$('live').hidden && appliedGames().length) $('live-upd').textContent = liveUpd(); } }, 10000);
     poll(true);
   }
 

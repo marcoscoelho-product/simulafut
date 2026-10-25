@@ -74,7 +74,8 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font-body); 
 .page { max-width: 780px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 56px; display: grid; gap: 40px; }
 .page.has-bar { padding-block-end: 132px; }
 h1, h2, h3 { font-family: var(--font-display); font-weight: 800; letter-spacing: 0.005em; line-height: 1; margin: 0; text-wrap: balance; }
-h1 { font-size: clamp(2.6rem, 10vw, 3.9rem); text-transform: uppercase; }
+h1 { font-size: clamp(2.6rem, 10vw, 3.9rem); text-transform: uppercase; white-space: nowrap; overflow: hidden; max-width: 100%; line-height: 1.15; padding-top: .05em; }
+.page > *, .top > * { min-width: 0; }
 h2 { font-size: clamp(1.7rem, 6vw, 2.15rem); text-transform: uppercase; }
 h3 { font-size: 1.25rem; text-transform: uppercase; letter-spacing: 0.01em; }
 p { margin: 0; }
@@ -2190,6 +2191,15 @@ function makeEngine(D) {
     const over = () => btns.some(x => x.scrollWidth > x.clientWidth + 0.5);
     while (over() && size > 12) { size -= 0.5; btns.forEach(x => { x.style.fontSize = size + 'px'; }); }
   }
+  // keep the headline on one line: shrink it to the width available
+  function fitH1() {
+    const h = document.querySelector('h1'); h.style.fontSize = '';
+    let size = parseFloat(getComputedStyle(h).fontSize);
+    while (h.scrollWidth > h.clientWidth + 0.5 && size > 16) { size -= 0.5; h.style.fontSize = size + 'px'; }
+  }
+  fitH1();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitH1);
+  window.addEventListener('resize', fitH1);
   fitTabs();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitTabs);
   window.addEventListener('resize', fitTabs);

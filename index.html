@@ -161,9 +161,13 @@ table.proj { border-collapse: separate; border-spacing: 0; width: 100%; min-widt
 .viewtabs button[aria-selected="true"] { color: var(--ink); }
 .viewtabs button[aria-selected="true"] .lbl::after { background: var(--ink); }
 .viewtabs button:focus-visible { outline-offset: -3px; }
-.subtoggle { display: inline-flex; justify-self: start; gap: 2px; padding: 3px; border: 1px solid var(--rule-strong); border-radius: 8px; background: var(--surface); }
-.subtoggle button { border: 0; background: transparent; border-radius: 6px; padding: 5px 14px; min-height: 34px; font-size: 13.5px; font-weight: 600; color: var(--ink-2); cursor: pointer; }
-.subtoggle button[aria-pressed="true"] { background: var(--bg); color: var(--ink); box-shadow: inset 0 0 0 1px var(--rule-strong); }
+.subtoggle { display: inline-flex; justify-self: start; align-items: flex-end; gap: 22px; padding: 0 2px; border-bottom: 1px solid var(--rule); }
+.subtoggle button { position: relative; border: 0; background: transparent; padding: 6px 0 11px; min-height: 36px; font-family: var(--font-data); font-size: 12px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); cursor: pointer; transition: color .2s; }
+.subtoggle button:hover { color: var(--ink-2); }
+.subtoggle button::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 4px; border-radius: 2px; opacity: 0; transform: scaleX(.6); transform-origin: left; transition: opacity .25s, transform .25s;
+  background: linear-gradient(90deg, #0d366b 0 18%, transparent 18% 20.5%, #256abf 20.5% 38.5%, transparent 38.5% 41%, #6da7ec 41% 59%, transparent 59% 61.5%, #cde2fb 61.5% 79.5%, transparent 79.5% 82%, #d03b3b 82% 100%); }
+.subtoggle button[aria-pressed="true"] { color: var(--ink); }
+.subtoggle button[aria-pressed="true"]::after { opacity: 1; transform: none; }
 .c-pts { font-weight: 700; }
 .z4-lead { font-size: 16.5px; line-height: 1.45; max-width: 60ch; }
 .slots-wrap { display: grid; gap: 6px; }

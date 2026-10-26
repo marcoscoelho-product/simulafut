@@ -412,27 +412,18 @@ footer .credit { font-size: 12px; font-weight: 400; color: var(--muted); }
 .lg .ck.soon { color: var(--live); font-weight: 500; }
 .live-upd.soon { color: var(--live); font-weight: 600; }
 .lg.pre .sc { color: var(--muted); font-weight: 400; }
-.lg .fc { grid-column: 1 / -1; display: grid; gap: 5px; margin: -2px 0 2px; }
-.fc-row { display: flex; align-items: center; gap: 8px; }
-.fc-tag { flex: none; width: 3.6rem; font-family: var(--font-data); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
-.fc-tag.now { color: var(--live); font-weight: 500; }
-.fc-bar { flex: 1; display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 2px; background: var(--surface); }
-.fc-bar i { display: block; height: 100%; min-width: 2px; }
-.fc-bar.thin { height: 4px; opacity: .6; }
-.fc .h { background: var(--heat6); } .fc .d { background: var(--rule-strong); } .fc .a { background: var(--heat3); }
-.fc-leg { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px; font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-.fc-row + .fc-leg, .fc-leg { padding-left: 0; }
-.fc.tagged .fc-leg { padding-left: calc(3.6rem + 8px); }
-.fc-leg { justify-content: flex-start; }
-.fc-leg .it { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-.fc-leg .it i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
-.fc-leg .its { display: inline-flex; flex-wrap: wrap; gap: 2px 10px; }
-.fc-sc { flex: none; display: grid; justify-items: center; line-height: 1.15; padding: 3px 9px 4px; border: 1px solid var(--rule-strong); border-radius: 8px; background: var(--surface); white-space: nowrap; }
-.fc-sc small { font-family: var(--font-data); font-size: 9px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
-.fc-sc span { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.fc-sc b { font-family: var(--font-data); font-size: 14px; font-weight: 600; color: var(--ink); margin-right: 4px; }
-.fc-sc.now { border-color: color-mix(in srgb, var(--live) 45%, var(--rule-strong)); }
-.fc-old { font-family: var(--font-data); font-size: 11px; color: var(--muted); white-space: nowrap; }
+.lg .fct { grid-column: 1 / -1; width: 100%; border-collapse: separate; border-spacing: 3px; table-layout: fixed; margin: -4px 0 0; font-variant-numeric: tabular-nums; }
+.fct thead th { font-family: var(--font-data); font-size: 9.5px; font-weight: 400; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); text-align: center; line-height: 1.2; padding: 0 1px 1px; vertical-align: bottom; }
+.fct thead th:first-child { width: 25%; }
+.fct thead th.scol { width: 25%; }
+.fct tbody th { text-align: left; font-size: 11.5px; font-weight: 500; color: var(--muted); white-space: nowrap; padding-right: 4px; }
+.fct tr.now th { color: var(--live); font-weight: 600; }
+.fct td { text-align: center; padding: 5px 2px; border-radius: 5px; font-size: 13px; font-weight: 600; color: var(--ink); background: color-mix(in srgb, var(--lib) calc(var(--p, 0) * 45%), var(--bg)); }
+.fct td.sc { background: var(--surface); box-shadow: inset 0 0 0 1px var(--rule-strong); font-weight: 400; color: var(--muted); font-size: 11.5px; white-space: nowrap; }
+.fct td.sc b { font-family: var(--font-data); font-size: 13px; font-weight: 600; color: var(--ink); margin-right: 3px; }
+.fct tr.now td.sc { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--live) 50%, var(--rule-strong)); }
+.fct tr.old td { font-weight: 500; font-size: 12px; color: var(--ink-2); background: color-mix(in srgb, var(--lib) calc(var(--p, 0) * 22%), var(--bg)); }
+.fct tr.old td.sc { background: var(--surface); }
 .lg .abbr { display: none; }
 .rcard { display: inline-block; width: 7px; height: 10px; border-radius: 1.5px; background: #d03b3b; margin: 0 4px; vertical-align: 0; }
 .lg .sc { white-space: nowrap; }
@@ -2175,47 +2166,36 @@ function makeEngine(D) {
     return withDay && ymd(k) !== ymd(Date.now()) ? `${dayLabel(ymd(k))} ${hm(k)}` : hm(k);
   }
   const soon = k => k && k - Date.now() <= 3600000;
-  // forecast under a game: a home/draw/away bar, its legend and the most likely score; during the game the bar is the
-  // final result from now on ("Agora") with a thin bar of the pre-game forecast below it, for comparison
-  function fcBar(sd, thin) {
-    const b = el('div', 'fc-bar' + (thin ? ' thin' : ''));
-    [['h', sd.h], ['d', sd.d], ['a', sd.a]].forEach(([c, v]) => { const i = el('i', c); i.style.width = (v * 100).toFixed(1) + '%'; b.append(i); });
-    return b;
-  }
-  function fcBlock(g, sd, mode, pre) {
-    const A = byName[g.h].abbr, B = byName[g.a].abbr, tagged = mode !== 'pre';
-    const box = el('div', 'fc' + (tagged ? ' tagged' : ''));
-    box.setAttribute('aria-label', `${mode === 'live' ? 'Agora' : mode === 'post' ? 'Antes do jogo' : 'Previsão'}: ${g.h} ${pct(sd.h)}, empate ${pct(sd.d)}, ${g.a} ${pct(sd.a)}; placar mais provável ${sd.best[0]} a ${sd.best[1]}`);
-    const row = el('div', 'fc-row');
-    if (tagged) row.append(el('span', 'fc-tag' + (mode === 'live' ? ' now' : ''), mode === 'live' ? 'Agora' : 'Antes'));
-    const sc = el('span', 'fc-sc' + (mode === 'live' ? ' now' : '')); sc.title = mode === 'live' ? 'Placar final mais provável' : 'Placar mais provável';
-    const val = el('span'); val.append(el('b', null, `${sd.best[0]}×${sd.best[1]}`), document.createTextNode(pct(sd.best[2])));
-    sc.append(el('small', null, mode === 'live' ? 'final provável' : 'placar provável'), val);
-    row.append(fcBar(sd, false), sc);
-    box.append(row);
-    const leg = el('div', 'fc-leg');
-    [['h', A, sd.h], ['d', 'Empate', sd.d], ['a', B, sd.a]].forEach(([c, n, v]) => { const it = el('span', 'it'); it.append(el('i', c), document.createTextNode(`${n} ${pct(v)}`)); leg.append(it); });
-    box.append(leg);
-    if (mode === 'live' && pre) {
-      const r2 = el('div', 'fc-row');
-      r2.append(el('span', 'fc-tag', 'Antes'), fcBar(pre, true), el('span', 'fc-old', `${A} ${pct(pre.h)} · E ${pct(pre.d)} · ${B} ${pct(pre.a)}`));
-      box.append(r2);
-    }
-    return box;
+  // forecast under a game, as a small table: home win / draw / away win / most likely score; during the game a row
+  // "Agora" (final result from the current state) above the row "Antes do jogo"
+  function fcBlock(g, rows) {
+    const A = byName[g.h].abbr, B = byName[g.a].abbr, t = el('table', 'fct');
+    const hr = el('tr'); hr.append(el('th'), el('th', null, `${A} vence`), el('th', null, 'Empate'), el('th', null, `${B} vence`), el('th', 'scol', 'Placar provável'));
+    const th = el('thead'); th.append(hr); t.append(th);
+    const tb = el('tbody');
+    rows.forEach(([label, sd, cls]) => {
+      const tr = el('tr', cls || null); tr.append(el('th', null, label));
+      [sd.h, sd.d, sd.a].forEach(v => { const td = el('td', null, pct(v)); td.style.setProperty('--p', v.toFixed(3)); tr.append(td); });
+      const sc = el('td', 'sc'); sc.append(el('b', null, `${sd.best[0]}×${sd.best[1]}`), document.createTextNode(pct(sd.best[2]))); tr.append(sc);
+      tb.append(tr);
+    });
+    t.append(tb);
+    t.setAttribute('aria-label', rows.map(([label, sd]) => `${label}: ${g.h} vence ${pct(sd.h)}, empate ${pct(sd.d)}, ${g.a} vence ${pct(sd.a)}, placar provável ${sd.best[0]} a ${sd.best[1]}`).join('; '));
+    return t;
   }
   function preLine(h, a, fi) {
     if (fi == null || fi < 0) return null;
-    return fcBlock({ h, a }, E.scoreDist(D.models[state.model], fi), 'pre');
+    return fcBlock({ h, a }, [['Previsão', E.scoreDist(D.models[state.model], fi)]]);
   }
   function gameLines(g) {
     if (g.fi == null || g.fi < 0) return [];
     const M = D.models[state.model], pre = E.scoreDist(M, g.fi);
-    if (g.phase === 'pre') return [fcBlock(g, pre, 'pre')];
-    if (g.phase === 'post') return [fcBlock(g, pre, 'post')];
+    if (g.phase === 'pre') return [fcBlock(g, [['Previsão', pre]])];
+    if (g.phase === 'post') return [fcBlock(g, [['Antes do jogo', pre, 'old']])];
     const arr = live.arr;
     if ((g.phase === 'in' || g.phase === 'ht') && arr && arr.mode[g.fi] === 2) {
       const now = E.scoreDist(M, g.fi, { x: arr.x[g.fi], y: arr.y[g.fi], rem: arr.rem[g.fi], fh: arr.fh[g.fi], fa: arr.fa[g.fi], cum: live.cum });
-      return [fcBlock(g, now, 'live', pre)];
+      return [fcBlock(g, [['Agora', now, 'now'], ['Antes do jogo', pre, 'old']])];
     }
     return [];
   }

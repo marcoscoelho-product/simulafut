@@ -2477,6 +2477,8 @@ function makeEngine(D) {
   window.addEventListener('resize', fitTabs);
   $('sb-clear').addEventListener('click', clearAll);
   $('clear-all').addEventListener('click', clearAll);
+  // social icons come from a CDN; where they can't load (e.g. a viewer that blocks outside images), hide the link
+  document.querySelectorAll('.social img').forEach(i => { const hide = () => { i.closest('a').hidden = true; }; if (i.complete && !i.naturalWidth) hide(); else i.addEventListener('error', hide); });
   renderLede(); buildFilter(); renderDeciders(); renderFixtures(); renderMethod(); setupTip(); setupViews(); renderAll();
   try { setupLive(); } catch (e) { console.error('simulafut live', e); }
   if ($('live').hidden) $('trust-live').setAttribute('href', '#metodo');

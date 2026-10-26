@@ -291,6 +291,7 @@ table.bt thead th { font-family: var(--font-data); font-size: 11px; font-weight:
 table.bt td { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
 table.bt td:first-child { font-family: var(--font-body); }
 .bt-wrap { overflow-x: auto; }
+.method .learn-h { font-family: var(--font-data); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
 table.bt-grid { font-size: 11.5px; }
 table.bt-grid th, table.bt-grid td { padding: 5px 2px; text-align: center; }
 table.bt-grid thead tr:first-child th { text-align: center; border-bottom: 0; padding-bottom: 0; }
@@ -699,6 +700,20 @@ footer .credit { font-size: 12px; font-weight: 400; color: var(--muted); }
       <ul id="m-model"></ul>
     </section>
     <section>
+      <h3>O que ajuda a prever, e o que não</h3>
+      <p class="learn-h">Ajuda muito</p>
+      <ul id="learn-yes"></ul>
+      <p class="learn-h">Ajuda pouco ou nada</p>
+      <ul>
+        <li><strong>Troca de técnico.</strong> Nos cinco primeiros jogos de um técnico novo, o time marca e sofre o mesmo que no resto da temporada. A melhora que se costuma ver é volta à média, e o modelo já captura isso. Dar ao time uma força nova a cada técnico ou levar em conta o tempo no cargo também não melhorou as previsões de 2015 a 2024.</li>
+        <li><strong>Calendário.</strong> Um time com jogo de Libertadores ou Sul-Americana nos quatro dias seguintes marca cerca de 9% menos no Brasileirão, mas o ganho de previsão foi pequeno e inconsistente entre temporadas. Descanso curto, sozinho, não fez diferença. A Copa do Brasil ficou fora do teste por falta de datas confiáveis.</li>
+        <li><strong>Mando de campo próprio de cada time</strong>, além do mando médio da liga: a diferença entre times parece ruído.</li>
+        <li><strong>Distância da viagem do visitante</strong>: piorou levemente as previsões.</li>
+        <li><strong>Ajuste de placares baixos (Dixon-Coles)</strong>, que corrige 0×0 e 1×1: sem ganho na Série A, nem no resultado nem no placar exato.</li>
+        <li><strong>Histórico de confronto direto</strong>: a força atual dos dois times já carrega o que esse histórico teria de informação.</li>
+      </ul>
+    </section>
+    <section>
       <h3>Validação</h3>
       <p id="bt-intro"></p>
       <div class="bt-wrap">
@@ -735,19 +750,6 @@ footer .credit { font-size: 12px; font-weight: 400; color: var(--muted); }
         </table>
       </div>
       <p class="table-note" id="bt-seasons-note"></p>
-    </section>
-    <section>
-      <h3>O que testei e ficou de fora</h3>
-      <ul>
-        <li><strong>Mando de campo próprio de cada time</strong>, além do mando médio da liga: não melhorou as previsões no backtest. A diferença entre times parece ruído.</li>
-        <li><strong>Distância da viagem do visitante</strong>: piorou levemente as previsões.</li>
-        <li><strong>Ajuste de placares baixos (Dixon-Coles)</strong>, que corrige 0×0 e 1×1: sem ganho na Série A, nem no resultado nem no placar exato.</li>
-        <li><strong>Histórico de confronto direto</strong>: não entrou. A força atual dos dois times já carrega o que esse histórico teria de informação.</li>
-        <li><strong>Troca de técnico</strong>: dar ao time uma força nova a cada técnico, um efeito de “técnico novo” nos primeiros jogos ou um efeito do tempo no cargo. Nenhuma das três melhorou as previsões de 2015 a 2024. Nos cinco primeiros jogos de um técnico novo, o time marca e sofre o mesmo que no resto da temporada: a melhora que se costuma ver é volta à média, e o modelo já captura isso.</li>
-        <li><strong>Calendário</strong>: jogo de Libertadores ou Sul-Americana nos dias seguintes ou anteriores, e descanso curto. Um time com jogo continental nos quatro dias seguintes marca cerca de 9% menos no Brasileirão, mas o ganho de previsão foi pequeno e inconsistente entre temporadas. A Copa do Brasil ficou fora do teste por falta de datas confiáveis.</li>
-        <li><strong>Valor de mercado só como ponto de partida</strong> das forças, como o modelo fazia até outubro de 2026: efeito praticamente nulo nas previsões. Entrou no lugar o valor atualizado como variável do modelo (veja Validação).</li>
-        <li><strong>Ruído constante</strong>, um sorteio fixo por time em vez de uma oscilação que cresce com o tempo: calibrou a dispersão dos pontos quase tão bem, mas piorou mais a previsão dos jogos próximos. Ficou a oscilação que cresce com a distância.</li>
-      </ul>
     </section>
     <section>
       <h3>Sensibilidade</h3>
@@ -1697,6 +1699,15 @@ function makeEngine(D) {
       `<strong>Pontos que bastam.</strong> A chance de título ou de queda para cada pontuação final é a fração das simulações em que um time terminou com aqueles pontos e foi campeão ou caiu. No rebaixamento, a linha “Média” junta todos os times; a linha de cada time usa só as simulações dele. Elas diferem porque o desempate começa pelo número de vitórias: com os mesmos pontos, quem empatou mais fica atrás.`
     ];
     const ul = $('m-model'); ul.innerHTML = items.map(s => `<li>${s}</li>`).join('');
+    const ingMv = B.ingredients.find(r => r.key === 'mv'), ingAll = B.ingredients.find(r => r.key === 'final'), dr28 = B.drift.rows[0];
+    const learn = [
+      `<strong>Valor do elenco atualizado.</strong> Foi o ingrediente que mais melhorou as previsões: mesmo sem o xG, o modelo errou ${nf1.format(-ingMv.d)}% menos que a configuração anterior nas chances de título, G4, G6 e Z4, e foi melhor em ${ingMv.better} de ${ingMv.n} temporadas. Elenco caro em fase ruim tende a reagir; elenco barato embalado tende a cair.`,
+      `<strong>Memória curta.</strong> O Brasileirão muda rápido. O que melhor previu foi dar peso quase só ao último ano: um jogo de um ano atrás vale ${w(1)}% de um jogo de hoje.`,
+      `<strong>Chances criadas (xG).</strong> Quem cria muito e não converte costuma começar a converter. Somado ao valor do elenco, o xG levou a redução do erro a ${nf1.format(-ingAll.d)}%, com ganho maior na primeira metade do campeonato, quando os placares ainda enganam.`,
+      `<strong>Força que muda com o tempo.</strong> Sem uma oscilação semana a semana, o modelo ficava confiante demais no começo do campeonato: com cerca de 28 rodadas por jogar, os pontos reais variavam ${r0(dr28.off)}% mais do que o previsto.`,
+      `<strong>Expulsões, no ao vivo.</strong> Um vermelho muda o jogo: o time com um a menos marca cerca de um terço a menos, e o adversário, cerca de 40% a mais.`
+    ];
+    $('learn-yes').innerHTML = learn.map(s => `<li>${s}</li>`).join('');
     // validation: games
     const Mt = B.match;
     $('bt-intro').textContent = `Previsões rodada a rodada: em cada temporada de ${Mt.s0} a ${Mt.s1}, o modelo foi refeito a cada duas rodadas, só com os jogos anteriores, e previu as duas rodadas seguintes: ${nf0.format(Mt.n)} partidas, sem olhar o resultado delas.`;

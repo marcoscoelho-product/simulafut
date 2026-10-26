@@ -1036,7 +1036,7 @@ function makeEngine(D) {
     const played = m.n_played + done, rem = m.n_rem - done - on;
     const counts = on ? `${nf0.format(played)} jogos disputados, ${on} em andamento e ${rem} a disputar.` : `${nf0.format(played)} jogos disputados e ${rem} a disputar.`;
     const sims = live.res ? nf0.format(SIMS) : nf0.format(D.models.xg.sims);
-    $('lede').textContent = 'Chances de título, classificação e queda, em 100 mil temporadas simuladas.';
+    $('lede').textContent = `Chances de título, classificação e queda, a partir de ${nf0.format(D.meta.n_hist)} partidas analisadas e 100 mil temporadas simuladas.`;
     const rr = D.fixtures.map(f => f.r).filter(r => r !== 21);
     const rnd = rr.length ? Math.min(...rr) : null;
     $('comp-sub').textContent = `Série A${rnd ? ` · Rodada ${rnd}` : ''}${live.res ? ' · ao vivo' : ''}`;

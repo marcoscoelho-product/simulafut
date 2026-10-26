@@ -415,6 +415,9 @@ footer .credit { font-size: 12px; font-weight: 400; color: var(--muted); }
 .lg .pv { grid-column: 1 / -1; margin-top: -6px; font-size: 12.5px; color: var(--muted); text-align: center; font-variant-numeric: tabular-nums; }
 .lg .pv b { font-weight: 600; color: var(--ink-2); }
 .lg .pv .nw { white-space: nowrap; }
+.lg .pv .lead { font-weight: 600; color: var(--ink-2); }
+.lg .pv.old { margin-top: -8px; font-size: 11.5px; opacity: .85; }
+.lg .pv.old .lead, .lg .pv.old b { font-weight: 500; }
 .lg .abbr { display: none; }
 .rcard { display: inline-block; width: 7px; height: 10px; border-radius: 1.5px; background: #d03b3b; margin: 0 4px; vertical-align: 0; }
 .lg .sc { white-space: nowrap; }
@@ -1006,16 +1009,24 @@ function makeEngine(D) {
   }
   function newLive() { return { mode: new Int8Array(NF), x: new Int16Array(NF), y: new Int16Array(NF), rem: new Float64Array(NF), fh: new Float64Array(NF).fill(1), fa: new Float64Array(NF).fill(1) }; }
   // pre-game forecast of one fixture: home/draw/away and the most likely score, averaging the Poisson score grid over the draws
-  function scoreDist(M, f) {
+  // live (optional): { x, y, rem, fh, fa, cum } = current score, share of the game's goals still to come, red-card
+  // factors and the cumulative draw weights of the live run; the result is about the FINAL score
+  function scoreDist(M, f, lv) {
     rates(M); const G = 10, K = M._lam.length, P = new Float64Array((G + 1) * (G + 1));
+    const x0 = lv ? lv.x : 0, y0 = lv ? lv.y : 0, r = lv ? lv.rem : 1, fh = lv ? lv.fh : 1, fa = lv ? lv.fa : 1;
     for (let k = 0; k < K; k++) {
-      const l = M._lam[k][f], u = M._nu[k][f]; const ph = [Math.exp(-l)], pa = [Math.exp(-u)];
+      const wk = lv && lv.cum ? lv.cum[k] - (k ? lv.cum[k - 1] : 0) : 1 / K;
+      if (wk <= 0) continue;
+      const l = M._lam[k][f] * r * fh, u = M._nu[k][f] * r * fa; const ph = [Math.exp(-l)], pa = [Math.exp(-u)];
       for (let i = 1; i <= G; i++) { ph[i] = ph[i - 1] * l / i; pa[i] = pa[i - 1] * u / i; }
-      for (let x = 0; x <= G; x++) for (let y = 0; y <= G; y++) P[x * (G + 1) + y] += ph[x] * pa[y] / K;
+      for (let x = 0; x <= G; x++) for (let y = 0; y <= G; y++) P[x * (G + 1) + y] += ph[x] * pa[y] * wk;
     }
     let h = 0, d = 0, a = 0, best = [0, 0, 0];
-    for (let x = 0; x <= G; x++) for (let y = 0; y <= G; y++) { const p = P[x * (G + 1) + y]; if (x > y) h += p; else if (x === y) d += p; else a += p; if (p > best[2]) best = [x, y, p]; }
-    const t = h + d + a; return { h: h / t, d: d / t, a: a / t, best };
+    for (let x = 0; x <= G; x++) for (let y = 0; y <= G; y++) {
+      const p = P[x * (G + 1) + y], X = x + x0, Y = y + y0;
+      if (X > Y) h += p; else if (X === Y) d += p; else a += p; if (p > best[2]) best = [X, Y, p];
+    }
+    const t = h + d + a; return { h: h / t, d: d / t, a: a / t, best: [best[0], best[1], best[2] / t] };
   }
   return { newAcc, run, finalize, drawWeights, newLive, goalShareLeft, halftimeLeft, scoreDist, NF, N, TI };
 }
@@ -2014,6 +2025,7 @@ function makeEngine(D) {
     const token = ++live.token, arr = live.arr;
     const M = D.models[state.model], none = new Int8Array(E.NF).fill(-1);
     const cum = E.drawWeights(M, none, arr);
+    live.cum = cum;
     const acc = E.newAcc();
     live.running = true;
     const step = () => {
@@ -2148,15 +2160,31 @@ function makeEngine(D) {
     return withDay && ymd(k) !== ymd(Date.now()) ? `${dayLabel(ymd(k))} ${hm(k)}` : hm(k);
   }
   const soon = k => k && k - Date.now() <= 3600000;
-  // "CFC 43% · empate 25% · GRE 32% · mais provável: 1×1 (12%)" under a game that hasn't started
-  function preLine(h, a, fi) {
-    if (fi == null || fi < 0) return null;
-    const sd = E.scoreDist(D.models[state.model], fi), A = byName[h].abbr, B = byName[a].abbr;
-    const ln = el('span', 'pv');
-    const p1 = el('span', 'nw', `${A} ${pct(sd.h)} · empate ${pct(sd.d)} · ${B} ${pct(sd.a)}`), p2 = el('span', 'nw');
-    p2.append(document.createTextNode('mais provável: '), el('b', null, `${sd.best[0]}×${sd.best[1]}`), document.createTextNode(` (${pct(sd.best[2])})`));
+  // forecast lines under a game: "CFC 43% · empate 25% · GRE 32% · mais provável: 1×1 (12%)"
+  function fcLine(h, a, sd, lead, scoreLabel, cls) {
+    const A = byName[h].abbr, B = byName[a].abbr, ln = el('span', 'pv' + (cls ? ' ' + cls : ''));
+    const p1 = el('span', 'nw'); if (lead) p1.append(el('b', 'lead', lead + ' '));
+    p1.append(document.createTextNode(`${A} ${pct(sd.h)} · empate ${pct(sd.d)} · ${B} ${pct(sd.a)}`));
+    const p2 = el('span', 'nw');
+    p2.append(document.createTextNode(scoreLabel + ': '), el('b', null, `${sd.best[0]}×${sd.best[1]}`), document.createTextNode(` (${pct(sd.best[2])})`));
     ln.append(p1, document.createTextNode(' · '), p2);
     return ln;
+  }
+  function preLine(h, a, fi) {
+    if (fi == null || fi < 0) return null;
+    return fcLine(h, a, E.scoreDist(D.models[state.model], fi), '', 'mais provável');
+  }
+  function gameLines(g) {
+    if (g.fi == null || g.fi < 0) return [];
+    const M = D.models[state.model], pre = E.scoreDist(M, g.fi);
+    if (g.phase === 'pre') return [fcLine(g.h, g.a, pre, '', 'mais provável')];
+    if (g.phase === 'post') return [fcLine(g.h, g.a, pre, 'Antes do jogo:', 'mais provável', 'old')];
+    const arr = live.arr;
+    if ((g.phase === 'in' || g.phase === 'ht') && arr && arr.mode[g.fi] === 2) {
+      const now = E.scoreDist(M, g.fi, { x: arr.x[g.fi], y: arr.y[g.fi], rem: arr.rem[g.fi], fh: arr.fh[g.fi], fa: arr.fa[g.fi], cum: live.cum });
+      return [fcLine(g.h, g.a, now, 'Agora:', 'final mais provável'), fcLine(g.h, g.a, pre, 'Antes do jogo:', 'mais provável', 'old')];
+    }
+    return [];
   }
   function nextGameText() {
     const now = Date.now();
@@ -2222,7 +2250,7 @@ function makeEngine(D) {
       const cks = el('span', 'ck' + (on ? ' on' : ''), ck);
       if (g.phase === 'pre' && g.kickoff) { cks.dataset.k = g.kickoff; cks.dataset.day = '1'; cks.classList.toggle('soon', soon(g.kickoff)); }
       li.append(th, sc, ta, cks);
-      if (g.phase === 'pre') { const pl = preLine(g.h, g.a, g.fi); if (pl) li.append(pl); }
+      gameLines(g).forEach(ln => li.append(ln));
       ul.append(li);
     });
     renderMoves();

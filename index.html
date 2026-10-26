@@ -666,8 +666,7 @@ footer .credit { font-size: 12px; font-weight: 400; color: var(--muted); }
       <div class="fold-body">
     <section>
       <h3>Como foi feito</h3>
-      <p>Nenhum número do modelo foi escolhido a olho. Toda escolha passa pelo mesmo teste: o modelo é refeito em datas de temporadas passadas, só com o que se sabia naquele dia, prevê o que veio depois e é comparado com o que de fato aconteceu.</p>
-      <p id="m-how"></p>
+      <p>Toda escolha do modelo passa pelo mesmo teste: ele é refeito em datas de temporadas passadas, só com o que se sabia naquele dia, prevê o que veio depois e é comparado com o que de fato aconteceu. Só fica o que melhora essas previsões, e os ajustes finos, como o peso dos jogos antigos e o do xG, saíram desse mesmo teste (veja Validação).</p>
     </section>
     <section>
       <h3>O modelo</h3>
@@ -1660,7 +1659,6 @@ function makeEngine(D) {
     const dev = r0(100 * (Math.exp(PR.sig) - 1));
     const omTxt = PR.omega === 1 ? 'o mesmo peso dos' : PR.omega === 2 ? 'o dobro do peso dos' : `${nf1.format(PR.omega)} vezes o peso dos`;
     const osc = wk => r0(100 * Math.sqrt(PR.t2 * wk * 7 / 365));
-    $('m-how').textContent = `Os números que precisam ser fixados antes de ajustar o modelo saíram de buscas em grade, pelo menor erro de previsão: o peso dos jogos antigos e quanto os resultados podem afastar a força de um time do nível do seu elenco (${B.grid.n} combinações testadas em ${nf0.format(B.match.n)} jogos de ${B.match.s0} a ${B.match.s1}), o peso do xG (${B.omega.length} opções, nas tabelas de 2019 a 2025) e o tamanho da oscilação de força (${B.drift.n_opts} opções, em ${B.drift.n_cut} datas de corte de ${B.drift.s0} a ${B.drift.s1}). O resto, como o mando de campo, o efeito do valor de mercado e o dos jogos sem público, é estimado junto com as forças a cada atualização. Variáveis que não melhoraram as previsões ficaram de fora (veja abaixo).`;
     const items = [
       `<strong>Gols como sorteio.</strong> Em cada jogo, os gols de cada time seguem uma distribuição de Poisson. A média combina o ataque de um time, a defesa do outro e o mando de campo: um time médio marca ${nf2.format(M.home_goals)} gol por jogo em casa e ${nf2.format(M.away_goals)} fora.`,
       `<strong>Peso que cai com o tempo.</strong> As forças saem de ${nf0.format(D.meta.n_hist)} jogos da Série A desde 2003, mas quanto mais antigo o jogo, menos ele pesa: um jogo de seis meses atrás vale ${w(0.5)}% de um jogo de hoje, e um de um ano atrás, ${w(1)}%. Na prática, contam sobretudo os últimos 12 meses. Esse ritmo foi o que errou menos na busca em grade (veja Validação). Jogos de 2020 e 2021 sem público entram com mando de campo reduzido, estimado nos dados.`,

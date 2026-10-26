@@ -408,6 +408,8 @@ footer .credit { font-size: 12px; font-weight: 400; color: var(--muted); }
 .lg .sc { font-family: var(--font-data); font-variant-numeric: tabular-nums; font-weight: 500; font-size: 16px; min-width: 3.6em; text-align: center; }
 .lg .ck { font-family: var(--font-data); font-size: 12px; text-align: right; color: var(--muted); white-space: nowrap; }
 .lg .ck.on { color: var(--live); font-weight: 500; }
+.lg .ck.soon { color: var(--live); font-weight: 500; }
+.live-upd.soon { color: var(--live); font-weight: 600; }
 .lg.pre .sc { color: var(--muted); font-weight: 400; }
 .lg .abbr { display: none; }
 .rcard { display: inline-block; width: 7px; height: 10px; border-radius: 1.5px; background: #d03b3b; margin: 0 4px; vertical-align: 0; }
@@ -2159,7 +2161,7 @@ function makeEngine(D) {
     const playing = applied.some(g => g.phase !== 'post');
     box.classList.toggle('is-live', playing && live.status === 'ok');
     $('live-h-txt').textContent = playing ? 'Ao vivo' : 'Jogos de hoje';
-    $('live-upd').textContent = liveUpd();
+    $('live-upd').textContent = liveUpd(); $('live-upd').classList.remove('soon');
     // the games of the days that have applied games
     const days = new Set(applied.map(g => ymd(g.kickoff || live.lastOk)));
     const rank = g => ({ in: 0, ht: 0, pre: 1, post: 2, off: 3 })[g.phase];
@@ -2182,7 +2184,7 @@ function makeEngine(D) {
       else if (g.phase === 'off') ck = 'Adiado';
       else ck = kickText(g.kickoff, true);
       const cks = el('span', 'ck' + (on ? ' on' : ''), ck);
-      if (g.phase === 'pre' && g.kickoff) { cks.dataset.k = g.kickoff; cks.dataset.day = '1'; }
+      if (g.phase === 'pre' && g.kickoff) { cks.dataset.k = g.kickoff; cks.dataset.day = '1'; cks.classList.toggle('soon', soon(g.kickoff)); }
       li.append(th, sc, ta, cks);
       ul.append(li);
     });
@@ -2205,7 +2207,7 @@ function makeEngine(D) {
     $('live-h-txt').textContent = 'Ao vivo';
     { const u = upcoming(), g = u[0]; let t = live.status === 'error' || live.status === 'stale' ? 'sem acesso ao placar agora' : 'nenhum jogo agora';
       if (g && live.status !== 'error') { const day = g.kickoff ? ymd(g.kickoff) : g.day; t = soon(g.kickoff) ? `próximo: ${kickText(g.kickoff)}` : `próximo: ${dayLabel(day)}${g.kickoff ? ', ' + hm(g.kickoff) : ''}`; }
-      $('live-upd').textContent = t; }
+      $('live-upd').textContent = t; $('live-upd').classList.toggle('soon', !!(g && g.kickoff && live.status !== 'error' && soon(g.kickoff))); }
     $('live-moves').hidden = true; $('lc').hidden = true; $('live-foot').hidden = true;
     const ups = upcoming();
     let txt = 'Aqui você acompanha as probabilidades em tempo real quando houver jogos em andamento.';
@@ -2221,7 +2223,7 @@ function makeEngine(D) {
       const th = el('span', 't h'); th.append(el('span', 'full', g.h), el('span', 'abbr', byName[g.h].abbr));
       const ta = el('span', 't a'); ta.append(el('span', 'full', g.a), el('span', 'abbr', byName[g.a].abbr));
       const cks = el('span', 'ck', g.kickoff ? kickText(g.kickoff) : '');
-      if (g.kickoff) cks.dataset.k = g.kickoff;
+      if (g.kickoff) { cks.dataset.k = g.kickoff; cks.classList.toggle('soon', soon(g.kickoff)); }
       li.append(th, el('span', 'sc', '×'), ta, cks);
       ul.append(li);
     });
@@ -2462,7 +2464,7 @@ function makeEngine(D) {
     setInterval(() => { if (document.visibilityState === 'visible') { renderStatus(); if (!$('live').hidden && appliedGames().length) $('live-upd').textContent = liveUpd(); } }, 10000);
     setInterval(() => {
       if (document.visibilityState !== 'visible' || $('live').hidden) return;
-      document.querySelectorAll('#live-games [data-k]').forEach(e => { e.textContent = kickText(+e.dataset.k, e.dataset.day === '1'); });
+      document.querySelectorAll('#live-games [data-k]').forEach(e => { e.textContent = kickText(+e.dataset.k, e.dataset.day === '1'); e.classList.toggle('soon', soon(+e.dataset.k)); });
       if (!appliedGames().length) renderLiveEmpty();
     }, 15000);
     poll(true);

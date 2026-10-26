@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Simulafut · Brasileirão 2026</title>
-<meta name="description" content="Chances de título, G4, G6 e rebaixamento de cada clube no Brasileirão 2026, com 100 mil simulações atualizadas a cada rodada.">
+<meta name="description" content="Chances de título, G4, G6 e rebaixamento de cada clube no Brasileirão 2026: 100 mil temporadas simuladas por um modelo criado com IA e testado em temporadas passadas, atualizado ao vivo.">
 <link rel="canonical" href="https://simulafut.ia.br/">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -15,7 +15,7 @@
 <meta property="og:locale" content="pt_BR">
 <meta property="og:url" content="https://simulafut.ia.br/">
 <meta property="og:title" content="Quem leva o Brasileirão 2026?">
-<meta property="og:description" content="Chances de título, G4, G6 e rebaixamento de cada clube no Brasileirão 2026, com 100 mil simulações atualizadas a cada rodada.">
+<meta property="og:description" content="Chances de título, G4, G6 e rebaixamento de cada clube no Brasileirão 2026: 100 mil temporadas simuladas por um modelo criado com IA e testado em temporadas passadas, atualizado ao vivo.">
 <meta property="og:image" content="https://simulafut.ia.br/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -336,6 +336,13 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
 .sfold[open] .fold-ic::after { transform: rotate(0deg); }
 .sfold > summary:hover .fold-ic { background: var(--bg); }
 
+/* credibility row */
+.trust { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; }
+@media (max-width: 420px) { .trust { gap: 6px 10px; } .trust a { font-size: 12.5px; gap: 5px; } }
+.trust a { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; color: var(--ink); text-decoration: none; }
+.trust a::before { content: ""; width: 14px; height: 14px; flex: none; border-radius: 50%; background: var(--lib) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M3.5 7.2l2.2 2.2 4.8-4.8' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/14px no-repeat; }
+.trust a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
 /* freshness line */
 .status-line { display: flex; align-items: baseline; gap: 8px; font-size: 13.5px; color: var(--ink-2); max-width: 62ch; }
 .status-line .sdot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--rule-strong); transform: translateY(-1px); }
@@ -456,6 +463,11 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
   <header class="top">
     <h1>Quem leva o Brasileirão</h1>
     <p class="lede" id="lede"></p>
+    <ul class="trust" aria-label="Sobre o modelo">
+      <li><a href="#metodo">Feito com IA</a></li>
+      <li><a href="#metodo">Testado em 20 temporadas</a></li>
+      <li><a href="#metodo">Método aberto</a></li>
+    </ul>
     <p class="status-line" id="status-line" role="status"><span class="sdot" aria-hidden="true"></span><span id="status-text"></span></p>
   </header>
 
@@ -611,6 +623,10 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
     <details class="fold">
       <summary><span class="fold-h"><h2 id="h-met">Como funciona</h2><span class="fold-sub">O modelo, a validação e as fontes</span></span><span class="fold-ic" aria-hidden="true"></span></summary>
       <div class="fold-body">
+    <section>
+      <h3>Quem fez</h3>
+      <p>O Simulafut foi criado por Marcos Paulo Coelho com o Claude, um agente de inteligência artificial da Anthropic. O agente coletou e conferiu os dados, construiu o modelo estatístico, testou cada escolha contra temporadas passadas antes de adotá-la e roda a atualização todos os dias. Toda mudança de método passa pelo mesmo teste: só entra se melhorar as previsões que o modelo teria feito no passado, sem olhar o resultado.</p>
+    </section>
     <section>
       <h3>O modelo</h3>
       <ul id="m-model"></ul>

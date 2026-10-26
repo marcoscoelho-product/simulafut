@@ -412,6 +412,9 @@ footer .credit { font-size: 12px; font-weight: 400; color: var(--muted); }
 .lg .ck.soon { color: var(--live); font-weight: 500; }
 .live-upd.soon { color: var(--live); font-weight: 600; }
 .lg.pre .sc { color: var(--muted); font-weight: 400; }
+.lg .pv { grid-column: 1 / -1; margin-top: -6px; font-size: 12.5px; color: var(--muted); text-align: center; font-variant-numeric: tabular-nums; }
+.lg .pv b { font-weight: 600; color: var(--ink-2); }
+.lg .pv .nw { white-space: nowrap; }
 .lg .abbr { display: none; }
 .rcard { display: inline-block; width: 7px; height: 10px; border-radius: 1.5px; background: #d03b3b; margin: 0 4px; vertical-align: 0; }
 .lg .sc { white-space: nowrap; }
@@ -1002,7 +1005,19 @@ function makeEngine(D) {
     return out;
   }
   function newLive() { return { mode: new Int8Array(NF), x: new Int16Array(NF), y: new Int16Array(NF), rem: new Float64Array(NF), fh: new Float64Array(NF).fill(1), fa: new Float64Array(NF).fill(1) }; }
-  return { newAcc, run, finalize, drawWeights, newLive, goalShareLeft, halftimeLeft, NF, N, TI };
+  // pre-game forecast of one fixture: home/draw/away and the most likely score, averaging the Poisson score grid over the draws
+  function scoreDist(M, f) {
+    rates(M); const G = 10, K = M._lam.length, P = new Float64Array((G + 1) * (G + 1));
+    for (let k = 0; k < K; k++) {
+      const l = M._lam[k][f], u = M._nu[k][f]; const ph = [Math.exp(-l)], pa = [Math.exp(-u)];
+      for (let i = 1; i <= G; i++) { ph[i] = ph[i - 1] * l / i; pa[i] = pa[i - 1] * u / i; }
+      for (let x = 0; x <= G; x++) for (let y = 0; y <= G; y++) P[x * (G + 1) + y] += ph[x] * pa[y] / K;
+    }
+    let h = 0, d = 0, a = 0, best = [0, 0, 0];
+    for (let x = 0; x <= G; x++) for (let y = 0; y <= G; y++) { const p = P[x * (G + 1) + y]; if (x > y) h += p; else if (x === y) d += p; else a += p; if (p > best[2]) best = [x, y, p]; }
+    const t = h + d + a; return { h: h / t, d: d / t, a: a / t, best };
+  }
+  return { newAcc, run, finalize, drawWeights, newLive, goalShareLeft, halftimeLeft, scoreDist, NF, N, TI };
 }
 // ENGINE END
 
@@ -2129,10 +2144,20 @@ function makeEngine(D) {
   function kickText(k, withDay) {
     const left = k - Date.now();
     if (left <= 0) return 'em instantes';
-    if (left <= 3600000) return `em ${Math.ceil(left / 60000)} min`;
+    if (left <= 3600000) return `em ${Math.ceil(left / 60000)}\u00a0min`;
     return withDay && ymd(k) !== ymd(Date.now()) ? `${dayLabel(ymd(k))} ${hm(k)}` : hm(k);
   }
   const soon = k => k && k - Date.now() <= 3600000;
+  // "CFC 43% · empate 25% · GRE 32% · mais provável: 1×1 (12%)" under a game that hasn't started
+  function preLine(h, a, fi) {
+    if (fi == null || fi < 0) return null;
+    const sd = E.scoreDist(D.models[state.model], fi), A = byName[h].abbr, B = byName[a].abbr;
+    const ln = el('span', 'pv');
+    const p1 = el('span', 'nw', `${A} ${pct(sd.h)} · empate ${pct(sd.d)} · ${B} ${pct(sd.a)}`), p2 = el('span', 'nw');
+    p2.append(document.createTextNode('mais provável: '), el('b', null, `${sd.best[0]}×${sd.best[1]}`), document.createTextNode(` (${pct(sd.best[2])})`));
+    ln.append(p1, document.createTextNode(' · '), p2);
+    return ln;
+  }
   function nextGameText() {
     const now = Date.now();
     const g = live.games.filter(x => x.phase === 'pre' && x.kickoff && x.kickoff > now - 3 * 3600000).sort((a, b) => a.kickoff - b.kickoff)[0];
@@ -2197,6 +2222,7 @@ function makeEngine(D) {
       const cks = el('span', 'ck' + (on ? ' on' : ''), ck);
       if (g.phase === 'pre' && g.kickoff) { cks.dataset.k = g.kickoff; cks.dataset.day = '1'; cks.classList.toggle('soon', soon(g.kickoff)); }
       li.append(th, sc, ta, cks);
+      if (g.phase === 'pre') { const pl = preLine(g.h, g.a, g.fi); if (pl) li.append(pl); }
       ul.append(li);
     });
     renderMoves();
@@ -2236,6 +2262,7 @@ function makeEngine(D) {
       const cks = el('span', 'ck', g.kickoff ? kickText(g.kickoff) : '');
       if (g.kickoff) { cks.dataset.k = g.kickoff; cks.classList.toggle('soon', soon(g.kickoff)); }
       li.append(th, el('span', 'sc', '×'), ta, cks);
+      const pl = preLine(g.h, g.a, g.fi != null ? g.fi : (FIX.has(g.h + '|' + g.a) ? FIX.get(g.h + '|' + g.a) : -1)); if (pl) li.append(pl);
       ul.append(li);
     });
   }

@@ -412,12 +412,27 @@ footer .credit { font-size: 12px; font-weight: 400; color: var(--muted); }
 .lg .ck.soon { color: var(--live); font-weight: 500; }
 .live-upd.soon { color: var(--live); font-weight: 600; }
 .lg.pre .sc { color: var(--muted); font-weight: 400; }
-.lg .pv { grid-column: 1 / -1; margin-top: -6px; font-size: 12.5px; color: var(--muted); text-align: center; font-variant-numeric: tabular-nums; }
-.lg .pv b { font-weight: 600; color: var(--ink-2); }
-.lg .pv .nw { white-space: nowrap; }
-.lg .pv .lead { font-weight: 600; color: var(--ink-2); }
-.lg .pv.old { margin-top: -8px; font-size: 11.5px; opacity: .85; }
-.lg .pv.old .lead, .lg .pv.old b { font-weight: 500; }
+.lg .fc { grid-column: 1 / -1; display: grid; gap: 5px; margin: -2px 0 2px; }
+.fc-row { display: flex; align-items: center; gap: 8px; }
+.fc-tag { flex: none; width: 3.6rem; font-family: var(--font-data); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.fc-tag.now { color: var(--live); font-weight: 500; }
+.fc-bar { flex: 1; display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 2px; background: var(--surface); }
+.fc-bar i { display: block; height: 100%; min-width: 2px; }
+.fc-bar.thin { height: 4px; opacity: .6; }
+.fc .h { background: var(--heat6); } .fc .d { background: var(--rule-strong); } .fc .a { background: var(--heat3); }
+.fc-leg { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px; font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.fc-row + .fc-leg, .fc-leg { padding-left: 0; }
+.fc.tagged .fc-leg { padding-left: calc(3.6rem + 8px); }
+.fc-leg { justify-content: flex-start; }
+.fc-leg .it { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.fc-leg .it i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+.fc-leg .its { display: inline-flex; flex-wrap: wrap; gap: 2px 10px; }
+.fc-sc { flex: none; display: grid; justify-items: center; line-height: 1.15; padding: 3px 9px 4px; border: 1px solid var(--rule-strong); border-radius: 8px; background: var(--surface); white-space: nowrap; }
+.fc-sc small { font-family: var(--font-data); font-size: 9px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.fc-sc span { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.fc-sc b { font-family: var(--font-data); font-size: 14px; font-weight: 600; color: var(--ink); margin-right: 4px; }
+.fc-sc.now { border-color: color-mix(in srgb, var(--live) 45%, var(--rule-strong)); }
+.fc-old { font-family: var(--font-data); font-size: 11px; color: var(--muted); white-space: nowrap; }
 .lg .abbr { display: none; }
 .rcard { display: inline-block; width: 7px; height: 10px; border-radius: 1.5px; background: #d03b3b; margin: 0 4px; vertical-align: 0; }
 .lg .sc { white-space: nowrap; }
@@ -2160,29 +2175,47 @@ function makeEngine(D) {
     return withDay && ymd(k) !== ymd(Date.now()) ? `${dayLabel(ymd(k))} ${hm(k)}` : hm(k);
   }
   const soon = k => k && k - Date.now() <= 3600000;
-  // forecast lines under a game: "CFC 43% · empate 25% · GRE 32% · mais provável: 1×1 (12%)"
-  function fcLine(h, a, sd, lead, scoreLabel, cls) {
-    const A = byName[h].abbr, B = byName[a].abbr, ln = el('span', 'pv' + (cls ? ' ' + cls : ''));
-    const p1 = el('span', 'nw'); if (lead) p1.append(el('b', 'lead', lead + ' '));
-    p1.append(document.createTextNode(`${A} ${pct(sd.h)} · empate ${pct(sd.d)} · ${B} ${pct(sd.a)}`));
-    const p2 = el('span', 'nw');
-    p2.append(document.createTextNode(scoreLabel + ': '), el('b', null, `${sd.best[0]}×${sd.best[1]}`), document.createTextNode(` (${pct(sd.best[2])})`));
-    ln.append(p1, document.createTextNode(' · '), p2);
-    return ln;
+  // forecast under a game: a home/draw/away bar, its legend and the most likely score; during the game the bar is the
+  // final result from now on ("Agora") with a thin bar of the pre-game forecast below it, for comparison
+  function fcBar(sd, thin) {
+    const b = el('div', 'fc-bar' + (thin ? ' thin' : ''));
+    [['h', sd.h], ['d', sd.d], ['a', sd.a]].forEach(([c, v]) => { const i = el('i', c); i.style.width = (v * 100).toFixed(1) + '%'; b.append(i); });
+    return b;
+  }
+  function fcBlock(g, sd, mode, pre) {
+    const A = byName[g.h].abbr, B = byName[g.a].abbr, tagged = mode !== 'pre';
+    const box = el('div', 'fc' + (tagged ? ' tagged' : ''));
+    box.setAttribute('aria-label', `${mode === 'live' ? 'Agora' : mode === 'post' ? 'Antes do jogo' : 'Previsão'}: ${g.h} ${pct(sd.h)}, empate ${pct(sd.d)}, ${g.a} ${pct(sd.a)}; placar mais provável ${sd.best[0]} a ${sd.best[1]}`);
+    const row = el('div', 'fc-row');
+    if (tagged) row.append(el('span', 'fc-tag' + (mode === 'live' ? ' now' : ''), mode === 'live' ? 'Agora' : 'Antes'));
+    const sc = el('span', 'fc-sc' + (mode === 'live' ? ' now' : '')); sc.title = mode === 'live' ? 'Placar final mais provável' : 'Placar mais provável';
+    const val = el('span'); val.append(el('b', null, `${sd.best[0]}×${sd.best[1]}`), document.createTextNode(pct(sd.best[2])));
+    sc.append(el('small', null, mode === 'live' ? 'final provável' : 'placar provável'), val);
+    row.append(fcBar(sd, false), sc);
+    box.append(row);
+    const leg = el('div', 'fc-leg');
+    [['h', A, sd.h], ['d', 'Empate', sd.d], ['a', B, sd.a]].forEach(([c, n, v]) => { const it = el('span', 'it'); it.append(el('i', c), document.createTextNode(`${n} ${pct(v)}`)); leg.append(it); });
+    box.append(leg);
+    if (mode === 'live' && pre) {
+      const r2 = el('div', 'fc-row');
+      r2.append(el('span', 'fc-tag', 'Antes'), fcBar(pre, true), el('span', 'fc-old', `${A} ${pct(pre.h)} · E ${pct(pre.d)} · ${B} ${pct(pre.a)}`));
+      box.append(r2);
+    }
+    return box;
   }
   function preLine(h, a, fi) {
     if (fi == null || fi < 0) return null;
-    return fcLine(h, a, E.scoreDist(D.models[state.model], fi), '', 'mais provável');
+    return fcBlock({ h, a }, E.scoreDist(D.models[state.model], fi), 'pre');
   }
   function gameLines(g) {
     if (g.fi == null || g.fi < 0) return [];
     const M = D.models[state.model], pre = E.scoreDist(M, g.fi);
-    if (g.phase === 'pre') return [fcLine(g.h, g.a, pre, '', 'mais provável')];
-    if (g.phase === 'post') return [fcLine(g.h, g.a, pre, 'Antes do jogo:', 'mais provável', 'old')];
+    if (g.phase === 'pre') return [fcBlock(g, pre, 'pre')];
+    if (g.phase === 'post') return [fcBlock(g, pre, 'post')];
     const arr = live.arr;
     if ((g.phase === 'in' || g.phase === 'ht') && arr && arr.mode[g.fi] === 2) {
       const now = E.scoreDist(M, g.fi, { x: arr.x[g.fi], y: arr.y[g.fi], rem: arr.rem[g.fi], fh: arr.fh[g.fi], fa: arr.fa[g.fi], cum: live.cum });
-      return [fcLine(g.h, g.a, now, 'Agora:', 'final mais provável'), fcLine(g.h, g.a, pre, 'Antes do jogo:', 'mais provável', 'old')];
+      return [fcBlock(g, now, 'live', pre)];
     }
     return [];
   }

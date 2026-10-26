@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Simulafut · Brasileirão 2026</title>
-<meta name="description" content="Chances de título, G4, G6 e rebaixamento de cada clube no Brasileirão 2026: 100 mil temporadas simuladas por um modelo testado em 20 temporadas passadas e atualizado ao vivo.">
+<title>Simulafut · O futebol em probabilidades</title>
+<meta name="description" content="O futebol em probabilidades. Agora: chances de título, G4 e rebaixamento no Brasileirão 2026, em 100 mil temporadas simuladas por um modelo testado em 20 temporadas passadas e atualizado ao vivo.">
 <link rel="canonical" href="https://simulafut.ia.br/">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -14,12 +14,12 @@
 <meta property="og:site_name" content="Simulafut">
 <meta property="og:locale" content="pt_BR">
 <meta property="og:url" content="https://simulafut.ia.br/">
-<meta property="og:title" content="Quem leva o Brasileirão 2026?">
-<meta property="og:description" content="Chances de título, G4, G6 e rebaixamento de cada clube no Brasileirão 2026: 100 mil temporadas simuladas por um modelo testado em 20 temporadas passadas e atualizado ao vivo.">
+<meta property="og:title" content="Simulafut · O futebol em probabilidades">
+<meta property="og:description" content="O futebol em probabilidades. Agora: chances de título, G4 e rebaixamento no Brasileirão 2026, em 100 mil temporadas simuladas por um modelo testado em 20 temporadas passadas e atualizado ao vivo.">
 <meta property="og:image" content="https://simulafut.ia.br/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Simulafut: quem leva o Brasileirão">
+<meta property="og:image:alt" content="Simulafut: o futebol em probabilidades">
 <meta name="twitter:card" content="summary_large_image">
 <style>html, body { margin: 0; }</style>
 <script>window.SIMULAFUT_LIVE = true;</script>
@@ -336,6 +336,11 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
 .sfold[open] .fold-ic::after { transform: rotate(0deg); }
 .sfold > summary:hover .fold-ic { background: var(--bg); }
 
+/* competition header: what the numbers below refer to */
+.comp-head { display: grid; gap: 2px; margin-top: -12px; margin-bottom: -22px; padding-top: 16px; border-top: 1px solid var(--rule-strong); }
+.comp-head h2 { font-size: clamp(1.6rem, 6vw, 2rem); }
+.comp-head p { font-family: var(--font-data); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+
 /* credibility row */
 .trust { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; }
 @media (max-width: 420px) { .trust { gap: 6px 10px; } .trust a { font-size: 12.5px; gap: 5px; } }
@@ -461,7 +466,7 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
     <div class="bstrip" aria-hidden="true"><i style="background:#0d366b"></i><i style="background:#0d366b"></i><i style="background:#0d366b"></i><i style="background:#184f95"></i><i style="background:#184f95"></i><i style="background:#256abf"></i><i style="background:#256abf"></i><i style="background:#256abf"></i><i style="background:#3987e5"></i><i style="background:#3987e5"></i><i style="background:#6da7ec"></i><i style="background:#6da7ec"></i><i style="background:#9ec5f4"></i><i style="background:#9ec5f4"></i><i style="background:#cde2fb"></i><i style="background:#cde2fb"></i><i style="background:#d03b3b;opacity:.35"></i><i style="background:#d03b3b;opacity:.57"></i><i style="background:#d03b3b;opacity:.78"></i><i style="background:#d03b3b"></i></div>
   </div>
   <header class="top">
-    <h1>Quem leva o Brasileirão</h1>
+    <h1>O futebol em probabilidades</h1>
     <p class="lede" id="lede"></p>
     <ul class="trust" aria-label="Sobre o modelo">
       <li><a href="#metodo">Testado em 20 temporadas</a></li>
@@ -470,6 +475,11 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
     </ul>
     <p class="status-line" id="status-line" role="status"><span class="sdot" aria-hidden="true"></span><span id="status-text"></span></p>
   </header>
+
+  <div class="comp-head">
+    <h2 id="comp-name">Brasileirão 2026</h2>
+    <p id="comp-sub"></p>
+  </div>
 
   <section class="live" id="live" hidden aria-labelledby="live-h">
    <details class="live-d" id="live-d">
@@ -1001,7 +1011,10 @@ function makeEngine(D) {
     const played = m.n_played + done, rem = m.n_rem - done - on;
     const counts = on ? `${nf0.format(played)} jogos disputados, ${on} em andamento e ${rem} a disputar.` : `${nf0.format(played)} jogos disputados e ${rem} a disputar.`;
     const sims = live.res ? nf0.format(SIMS) : nf0.format(D.models.xg.sims);
-    $('lede').textContent = `Chances de título, G4 e rebaixamento na Série A 2026, em ${sims} temporadas simuladas${live.res ? ' com os placares de agora' : ''}.`;
+    $('lede').textContent = 'Chances de título, classificação e queda, atualizadas ao vivo, a cada gol.';
+    const rr = D.fixtures.map(f => f.r).filter(r => r !== 21);
+    const rnd = rr.length ? Math.min(...rr) : null;
+    $('comp-sub').textContent = `Série A${rnd ? ` · Rodada ${rnd}` : ''}${live.res ? ' · ao vivo' : ''}`;
     $('foot').textContent = `Modelo ajustado com ${nf0.format(m.n_hist)} jogos da Série A (2003–2026). Atualização completa em ${m.label_short}.`;
   }
 

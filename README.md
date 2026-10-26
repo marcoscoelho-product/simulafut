@@ -1,6 +1,6 @@
 # Simulafut
 
-Chances de título, G4, G6 e rebaixamento no Brasileirão 2026, calculadas com 100 mil simulações de Monte Carlo e atualizadas depois de cada rodada.
+O futebol em probabilidades. Agora: chances de título, G4, G6 e rebaixamento no Brasileirão 2026, com 100 mil temporadas simuladas e atualização ao vivo.
 
 Site: https://simulafut.ia.br
 

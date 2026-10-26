@@ -434,6 +434,10 @@ footer .credit { font-size: 12px; font-weight: 400; color: var(--muted); }
 .lc-wrap .goal { stroke: var(--rule-strong); stroke-width: 1; }
 .lc-wrap .xh { stroke: var(--ink-2); stroke-width: 1; }
 .lc-wrap .ring { stroke: var(--surface); stroke-width: 2; }
+.lc-wrap .evl { stroke: var(--ink-2); stroke-width: 0.8; stroke-dasharray: 1.5 3; opacity: .55; }
+.lc-wrap svg text.evt { font-size: 9.5px; fill: var(--ink-2); }
+.lc-wrap svg text.evt.red { fill: #d03b3b; }
+.lc-wrap svg text.evt.fim { fill: var(--muted); }
 .lc-wrap .ev-ball { fill: var(--surface); stroke: var(--ink); stroke-width: 1.3; }
 .lc-wrap .ev-ball-c { fill: var(--ink); }
 .lc-wrap .ev-card { fill: #d03b3b; stroke: var(--surface); stroke-width: 1; }
@@ -2271,8 +2275,9 @@ function makeEngine(D) {
     ns.forEach(n => { const s = el('span'); const i = el('i'); i.style.background = cols[n]; s.append(i, document.createTextNode(n)); lg.append(s); });
     // geometry
     const wrap = $('lc-wrap');
-    const Wd = Math.max(280, Math.round(wrap.clientWidth || 600)), Ht = Wd < 480 ? 196 : 228;
-    const m = { l: 38, r: 66, t: 10, b: 24 };
+    const hasEv = !!(live.plan && (live.events || []).length);
+    const Wd = Math.max(280, Math.round(wrap.clientWidth || 600)), Ht = (Wd < 480 ? 196 : 228) + (hasEv ? 22 : 0);
+    const m = { l: 38, r: 66, t: hasEv ? 32 : 10, b: 24 };
     const x0 = pts[0].t, x1 = Math.max(pts[pts.length - 1].t, x0 + 30 * 60000);
     const X = t => m.l + (t - x0) / (x1 - x0) * (Wd - m.l - m.r);
     const Y = v => m.t + (1 - v) * (Ht - m.t - m.b);
@@ -2287,6 +2292,7 @@ function makeEngine(D) {
       const w = goalWall(g, gl); if (w <= x0 || w >= x1) return;
       sv('line', { x1: X(w), x2: X(w), y1: Y(0), y2: Y(0) - 6, class: 'goal' }, svg);
     }));
+    const evLayer = sv('g', { 'aria-hidden': 'true' }, svg);   // dotted event lines and their labels, under the curves
     ns.forEach(n => {
       const d = pts.map((p, i) => `${i ? 'L' : 'M'}${X(p.t).toFixed(1)},${Y(p.R[n][k]).toFixed(1)}`).join('');
       sv('path', { d, class: 'ser', style: `stroke:${cols[n]}` }, svg);
@@ -2305,12 +2311,36 @@ function makeEngine(D) {
         pi = ia;
         const dv = q => Math.abs(pts[ia].R[q][k] - pts[ib].R[q][k]);
         if (own.length) n = own.slice().sort((a, b) => dv(b) - dv(a))[0];
+        ev.jump = n ? dv(n) : 0;
       }
       let x = X(pts[pi].t), y = n ? Y(pts[pi].R[n][k]) : Y(0) - 8;
       for (let it = 0; it < 6 && marks.some(mk => Math.abs(mk.x - x) < 13 && Math.abs(mk.y - y) < 13); it++) y -= 13;
       y = Math.max(m.t + 2, y);
-      marks.push({ x, y, ev, line: !!n });
+      marks.push({ x, y, ev, line: !!n, pri: !n ? 0 : ev.kind === 'fim' ? 1 : 2 + (ev.jump || 0) });
       if (!byPt.has(pi)) byPt.set(pi, []); byPt.get(pi).push(ev);
+    });
+    // a dotted line at each event, with a short label on top (two rows; a label that still doesn't fit is left out and
+    // stays in the tooltip). Goals and red cards of the plotted teams get the rows first, biggest swing first; then their
+    // final whistles; then the other games.
+    const short = ev => {
+      const g = ev.g, mn = ev.min != null ? ` ${ev.min}${ev.ext ? '+' + ev.ext : ''}'` : '';
+      if (ev.kind === 'fim') return `FIM ${ev.sc[0]}×${ev.sc[1]}`;
+      return `${byName[ev.side === 'h' ? g.h : g.a].abbr}${mn}`;
+    };
+    const rows = [[], []], CW = 5.7;
+    marks.slice().sort((a, b) => (b.pri - a.pri) || (a.ev.t - b.ev.t)).forEach(mk => {
+      const txt = short(mk.ev), w = txt.length * CW;
+      const cx = Math.max(m.l + w / 2, Math.min(Wd - m.r + 30 - w / 2, mk.x));
+      const r = rows.findIndex(row => row.every(o => Math.abs(o.cx - cx) > (o.w + w) / 2 + 3));
+      mk.lab = r < 0 ? null : { txt, cx, w, r }; if (r >= 0) rows[r].push({ cx, w });
+    });
+    const seenX = new Set();
+    marks.forEach(mk => {
+      const top = mk.lab ? (mk.lab.r === 0 ? 13 : 24) : m.t;
+      const key = mk.x.toFixed(1);
+      if (!seenX.has(key) || mk.lab) sv('line', { x1: mk.x, x2: mk.x, y1: top, y2: Y(0), class: 'evl' }, evLayer);
+      seenX.add(key);
+      if (mk.lab) { const tx = sv('text', { x: mk.lab.cx, y: mk.lab.r === 0 ? 9 : 20, 'text-anchor': 'middle', class: 'evt' + (mk.ev.kind === 'verm' ? ' red' : mk.ev.kind === 'fim' ? ' fim' : '') }, evLayer); tx.textContent = mk.lab.txt; }
     });
     marks.forEach(({ x, y, ev }) => {
       const gi = sv('g', { transform: `translate(${x.toFixed(1)},${y.toFixed(1)})`, 'aria-hidden': 'true' }, svg);
@@ -2381,7 +2411,7 @@ function makeEngine(D) {
     };
     wrap.onblur = hide;
     if (live.hover != null && live.hover < pts.length) show(live.hover); else hide();
-    $('lc-note').textContent = `${live.view === 'titulo' ? 'Chance de título' : 'Risco de rebaixamento'} ao longo do dia.${live.plan ? ' Recalculada a cada gol e a cada 15 minutos. Ícones: gol, cartão vermelho e fim de jogo. Sobre cada linha ficam os lances dos jogos daquele time; na base, os dos outros jogos.' : ' Pontos registrados enquanto a página esteve aberta; os traços no eixo marcam os gols.'}`;
+    $('lc-note').textContent = `${live.view === 'titulo' ? 'Chance de título' : 'Risco de rebaixamento'} ao longo do dia.${live.plan ? ' Recalculada a cada gol e a cada 15 minutos. Os ícones marcam gols, cartões vermelhos e fins de jogo, com o lance escrito no topo quando cabe; sobre cada linha ficam os lances dos jogos daquele time, e na base os dos outros jogos.' : ' Pontos registrados enquanto a página esteve aberta; os traços no eixo marcam os gols.'}`;
     // table view
     const tbx = $('lc-table'); tbx.replaceChildren();
     const tbl = el('table'), thd = el('thead'), hr = el('tr');

@@ -42,6 +42,7 @@
   --fla: #eb6834;
   --pal: #1baf7a;
   --c-yel: #eda100;
+  --c-grn: #008300;
   --seg-on: #ffffff;
   --c-mag: #e87ba4;
   --live: #d03b3b;
@@ -57,7 +58,7 @@
   :root:not([data-theme="light"]) {
     --bg: #0d1210; --surface: #151b18; --ink: #e7ede8; --ink-2: #aab6ae; --muted: #7f8b84;
     --rule: #242e28; --rule-strong: #35423a; --accent: #7fa6ff; --lib: #3987e5; --z4: #e66767;
-    --fla: #d95926; --pal: #199e70; --c-yel: #c98500; --seg-on: #2a3530; --c-mag: #d55181; --live: #e66767; --sel: #e7ede8; --sel-ink: #0d1210; --heat0: #1c2420;
+    --fla: #d95926; --pal: #199e70; --c-yel: #c98500; --c-grn: #008300; --seg-on: #2a3530; --c-mag: #d55181; --live: #e66767; --sel: #e7ede8; --sel-ink: #0d1210; --heat0: #1c2420;
     --heat1: #0d366b; --heat2: #184f95; --heat3: #256abf; --heat4: #3987e5; --heat5: #6da7ec; --heat6: #9ec5f4; --heat7: #cde2fb;
     color-scheme: dark;
   }
@@ -65,7 +66,7 @@
 :root[data-theme="dark"] {
   --bg: #0d1210; --surface: #151b18; --ink: #e7ede8; --ink-2: #aab6ae; --muted: #7f8b84;
   --rule: #242e28; --rule-strong: #35423a; --accent: #7fa6ff; --lib: #3987e5; --z4: #e66767;
-  --fla: #d95926; --pal: #199e70; --c-yel: #c98500; --seg-on: #2a3530; --c-mag: #d55181; --live: #e66767; --sel: #e7ede8; --sel-ink: #0d1210; --heat0: #1c2420;
+  --fla: #d95926; --pal: #199e70; --c-yel: #c98500; --c-grn: #008300; --seg-on: #2a3530; --c-mag: #d55181; --live: #e66767; --sel: #e7ede8; --sel-ink: #0d1210; --heat0: #1c2420;
   --heat1: #0d366b; --heat2: #184f95; --heat3: #256abf; --heat4: #3987e5; --heat5: #6da7ec; --heat6: #9ec5f4; --heat7: #cde2fb;
   color-scheme: dark;
 }
@@ -2140,7 +2141,7 @@ function makeEngine(D) {
   const SVGNS = 'http://www.w3.org/2000/svg';
   function sv(tag, attrs, parent) { const e = document.createElementNS(SVGNS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.append(e); return e; }
   const TITLE_COL = { Flamengo: 'var(--fla)', Palmeiras: 'var(--pal)' };
-  const OTHER_COLS = ['var(--lib)', 'var(--c-yel)', 'var(--c-mag)'];
+  const OTHER_COLS = ['var(--lib)', 'var(--c-yel)', 'var(--c-mag)', 'var(--c-grn)'];
   function seriesColors(view, names) {
     const out = {};
     if (view === 'titulo') {
@@ -2162,8 +2163,11 @@ function makeEngine(D) {
     box.hidden = false;
     const B = pts[0].R, Nw = pts[pts.length - 1].R, names = T.map(t => t.name);
     const titN = names.filter(n => pts.some(p => p.R[n].title >= 0.01)).sort((a, b) => Nw[b].title - Nw[a].title).slice(0, 3);
-    const z4N = names.filter(n => Math.max(B[n].z4, Nw[n].z4) >= 0.02 && Math.min(B[n].z4, Nw[n].z4) <= 0.98)
-      .sort((a, b) => (Math.abs(Nw[b].z4 - B[b].z4) - Math.abs(Nw[a].z4 - B[a].z4)) || (Nw[b].z4 - Nw[a].z4)).slice(0, 3);
+    // relegation lines: the teams really in the fight; those playing in these games come first
+    const playing = new Set(appliedGames().flatMap(g => [g.h, g.a]));
+    const z4N = names.filter(n => Math.max(B[n].z4, Nw[n].z4) >= 0.05 && Math.min(B[n].z4, Nw[n].z4) <= 0.97)
+      .sort((a, b) => (playing.has(b) - playing.has(a)) || (Nw[b].z4 - Nw[a].z4)).slice(0, 4)
+      .sort((a, b) => Nw[b].z4 - Nw[a].z4);
     const move = (ns, k) => Math.max(0, ...ns.map(n => Math.max(...pts.map(p => Math.abs(p.R[n][k] - B[n][k])))));
     if (!live.viewByUser) live.view = move(titN, 'title') >= move(z4N, 'z4') ? 'titulo' : 'z4';
     if (!z4N.length) live.view = 'titulo';

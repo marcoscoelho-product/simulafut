@@ -493,8 +493,8 @@ footer .credit { font-size: 12px; font-weight: 400; color: var(--muted); }
     <p class="lede" id="lede"></p>
     <ul class="trust" aria-label="Sobre o modelo">
       <li><a href="#metodo">Testado em 18 temporadas</a></li>
-      <li><a href="#metodo">Em evolução contínua</a></li>
-      <li><a href="#metodo">Método aberto</a></li>
+      <li><a href="#live" id="trust-live">Ao vivo, a cada gol</a></li>
+      <li><a href="#metodo">Valor de mercado + xG</a></li>
     </ul>
     <p class="status-line" id="status-line" role="status"><span class="sdot" aria-hidden="true"></span><span id="status-text"></span></p>
   </header>
@@ -1036,7 +1036,7 @@ function makeEngine(D) {
     const played = m.n_played + done, rem = m.n_rem - done - on;
     const counts = on ? `${nf0.format(played)} jogos disputados, ${on} em andamento e ${rem} a disputar.` : `${nf0.format(played)} jogos disputados e ${rem} a disputar.`;
     const sims = live.res ? nf0.format(SIMS) : nf0.format(D.models.xg.sims);
-    $('lede').textContent = 'Chances de título, classificação e queda, atualizadas ao vivo, a cada gol.';
+    $('lede').textContent = 'Chances de título, classificação e queda, em 100 mil temporadas simuladas.';
     const rr = D.fixtures.map(f => f.r).filter(r => r !== 21);
     const rnd = rr.length ? Math.min(...rr) : null;
     $('comp-sub').textContent = `Série A${rnd ? ` · Rodada ${rnd}` : ''}${live.res ? ' · ao vivo' : ''}`;
@@ -2374,8 +2374,10 @@ function makeEngine(D) {
   $('clear-all').addEventListener('click', clearAll);
   renderLede(); buildFilter(); renderDeciders(); renderFixtures(); renderMethod(); setupTip(); setupViews(); renderAll();
   try { setupLive(); } catch (e) { console.error('simulafut live', e); }
+  if ($('live').hidden) $('trust-live').setAttribute('href', '#metodo');
   function openFoldFromHash() {
     const id = location.hash.slice(1); const sec = id && document.getElementById(id);
+    if (id === 'live' && sec && !sec.hidden) { $('live-d').open = true; sec.scrollIntoView(); return; }
     const d = sec && (sec.matches('.fold-sec') ? sec.querySelector('details.fold') : sec.closest('details.fold'));
     if (d) { d.open = true; sec.scrollIntoView(); }
   }

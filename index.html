@@ -434,6 +434,12 @@ footer .credit { font-size: 12px; font-weight: 400; color: var(--muted); }
 .lc-wrap .goal { stroke: var(--rule-strong); stroke-width: 1; }
 .lc-wrap .xh { stroke: var(--ink-2); stroke-width: 1; }
 .lc-wrap .ring { stroke: var(--surface); stroke-width: 2; }
+.lc-wrap .ev-ball { fill: var(--surface); stroke: var(--ink); stroke-width: 1.3; }
+.lc-wrap .ev-ball-c { fill: var(--ink); }
+.lc-wrap .ev-card { fill: #d03b3b; stroke: var(--surface); stroke-width: 1; }
+.lc-wrap .ev-fim { fill: var(--ink); stroke: var(--surface); stroke-width: 1; }
+.lc-wrap svg text.ev-fim-t { fill: var(--surface); font-size: 7px; font-weight: 500; letter-spacing: .04em; }
+.lc-tip .te { font-size: 12px; margin-top: 4px; padding-top: 4px; border-top: 1px solid color-mix(in srgb, var(--sel-ink) 25%, transparent); }
 .lc-tip { position: absolute; top: 0; z-index: 2; pointer-events: none; background: var(--sel); color: var(--sel-ink); font-size: 12.5px; padding: 6px 9px; border-radius: 6px; line-height: 1.4; min-width: 7.5rem; }
 .lc-tip .tt { font-family: var(--font-data); font-size: 11px; opacity: .8; }
 .lc-tip .tr { display: flex; align-items: center; gap: 6px; }
@@ -1810,7 +1816,7 @@ function makeEngine(D) {
     const kickoff = Date.parse(ev.date || comp.date || '') || null;
     // goals, to rebuild how the score evolved (null when the feed doesn't add up)
     let goals = [];
-    const reds = { h: 0, a: 0 };
+    const reds = { h: 0, a: 0 }, redsAt = [];
     if (phase === 'in' || phase === 'ht' || phase === 'post') {
       const hid = String((H.team || {}).id || ''), aid = String((A.team || {}).id || '');
       (comp.details || []).forEach(d => {
@@ -1826,7 +1832,8 @@ function makeEngine(D) {
         const txt = String((d.type || {}).text || '');
         if (!(d.redCard === true || /red card/i.test(txt))) return;
         const tid = String((d.team || {}).id || '');
-        if (tid && tid === hid) reds.h++; else if (tid && tid === aid) reds.a++;
+        const side = tid && tid === hid ? 'h' : (tid && tid === aid ? 'a' : null);
+        if (side) { reds[side]++; const c = clockOf((d.clock || {}).displayValue, (d.clock || {}).value); if (Number.isFinite(c.minute) && c.minute > 0) redsAt.push({ side, minute: c.minute, ext: c.ext }); }
       });
       const count = gs => [gs.filter(g => g.side === 'h').length, gs.filter(g => g.side === 'a').length];
       let [gh, ga] = count(goals);
@@ -1837,7 +1844,7 @@ function makeEngine(D) {
       }
     }
     const key = h + '|' + a;
-    return { id: String(ev.id || key), h, a, fi: FIX.has(key) ? FIX.get(key) : -1, phase, hs, as, period, minute: ck.minute, ext: ck.ext, kickoff, goals, reds };
+    return { id: String(ev.id || key), h, a, fi: FIX.has(key) ? FIX.get(key) : -1, phase, hs, as, period, minute: ck.minute, ext: ck.ext, kickoff, goals, reds, redsAt };
   }
   const fmtYMD = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
   const fmtHM = new Intl.DateTimeFormat('pt-BR', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false });
@@ -2015,6 +2022,11 @@ function makeEngine(D) {
         const ma = matchAt(g, Math.min(t, gameEnd(g) - 30000));
         arr.mode[f] = 2; arr.x[f] = x; arr.y[f] = y;
         arr.rem[f] = ma.ht ? E.halftimeLeft() : E.goalShareLeft(ma.p, ma.m, ma.e);
+        let rh = 0, ra = 0;
+        (g.redsAt || []).forEach(r => { if (goalWall(g, r) <= t) { if (r.side === 'h') rh++; else ra++; } });
+        rh = Math.min(2, rh); ra = Math.min(2, ra);
+        arr.fh[f] = Math.pow(RED_OWN, rh) * Math.pow(RED_OPP, ra); arr.fa[f] = Math.pow(RED_OWN, ra) * Math.pow(RED_OPP, rh);
+        if (rh || ra) parts.push(`r${f}:${rh}${ra}`);
       }
       parts.push(`${f}:${arr.mode[f]}:${arr.x[f]}-${arr.y[f]}:${arr.rem[f].toFixed(3)}`);
     });
@@ -2025,17 +2037,25 @@ function makeEngine(D) {
   function queueHistory() {
     const tok = ++live.histToken;
     const games = appliedGames();
-    if (!live.res || !canRebuild(games)) { live.plan = null; renderChart(); return; }
+    if (!live.res || !canRebuild(games)) { live.plan = null; live.events = []; renderChart(); return; }
     const now = live.resAt;
     const t0 = Math.min(...games.map(g => g.kickoff));
     const lastEnd = Math.max(...games.map(g => g.phase === 'post' ? gameEnd(g) : now));
     const stop = Math.min(now - 60000, lastEnd + 60000);
     const ts = [];
     for (let t = t0 + 15 * 60000; t < stop; t += 15 * 60000) ts.push(t);
+    const evs = [];
     games.forEach(g => {
       g.goals.forEach(gl => { const w = goalWall(g, gl); ts.push(w - 20000, w + 20000); });
-      if (g.phase === 'post') ts.push(gameEnd(g));
+      (g.redsAt || []).forEach(r => { const w = goalWall(g, r); ts.push(w - 20000, w + 20000); evs.push({ kind: 'verm', t: w, g, side: r.side, min: r.minute, ext: r.ext }); });
+      if (g.phase === 'post') { ts.push(gameEnd(g)); evs.push({ kind: 'fim', t: gameEnd(g), g, sc: [g.hs, g.as] }); }
+      let x = 0, y = 0;
+      g.goals.map(gl => ({ gl, w: goalWall(g, gl) })).sort((a, b) => a.w - b.w).forEach(({ gl, w }) => {
+        if (gl.side === 'h') x++; else y++;
+        evs.push({ kind: 'gol', t: w, g, side: gl.side, min: gl.minute, ext: gl.ext, own: gl.own, sc: [x, y] });
+      });
     });
+    live.events = evs;
     const times = [...new Set(ts.map(Math.round))].filter(t => t > t0 && t < stop).sort((a, b) => a - b);
     const todo = [], seen = new Set();
     live.plan = times.map(t => { const st = stateAt(t, games); if (st.arr && !live.hist.has(st.sig) && !seen.has(st.sig)) { seen.add(st.sig); todo.push(st); } return { t, sig: st.sig }; });
@@ -2263,7 +2283,7 @@ function makeEngine(D) {
     [0, 0.5, 1].forEach(v => { const tx = sv('text', { x: m.l - 6, y: Y(v) + 4, 'text-anchor': 'end' }, svg); tx.textContent = Math.round(v * 100) + '%'; });
     const span = x1 - x0, step = span <= 2.5 * 3600000 ? 30 * 60000 : (span <= 6 * 3600000 ? 3600000 : 2 * 3600000);
     for (let t = Math.ceil(x0 / step) * step; t <= x1; t += step) { const tx = sv('text', { x: X(t), y: Ht - 6, 'text-anchor': 'middle' }, svg); tx.textContent = hm(t); }
-    appliedGames().forEach(g => (g.goals || []).forEach(gl => {
+    if (!live.plan) appliedGames().forEach(g => (g.goals || []).forEach(gl => {
       const w = goalWall(g, gl); if (w <= x0 || w >= x1) return;
       sv('line', { x1: X(w), x2: X(w), y1: Y(0), y2: Y(0) - 6, class: 'goal' }, svg);
     }));
@@ -2271,6 +2291,46 @@ function makeEngine(D) {
       const d = pts.map((p, i) => `${i ? 'L' : 'M'}${X(p.t).toFixed(1)},${Y(p.R[n][k]).toFixed(1)}`).join('');
       sv('path', { d, class: 'ser', style: `stroke:${cols[n]}` }, svg);
     });
+    // every goal, red card and final whistle of the day: on the line of the plotted team that plays in that game (the one
+    // that moved most, if both are plotted); events of the other games sit on a strip at the bottom
+    const near = t => { let bi = -1; pts.forEach((p, i) => { if (Math.abs(p.t - t) < 1500 && (bi < 0 || Math.abs(p.t - t) < Math.abs(pts[bi].t - t))) bi = i; }); return bi; };
+    const marks = [], byPt = new Map();
+    (live.plan ? live.events || [] : []).forEach(ev => {
+      if (ev.t <= x0 || ev.t >= x1) return;
+      let pi, n = null;
+      const own = ns.filter(q => q === ev.g.h || q === ev.g.a);
+      if (ev.kind === 'fim') { pi = near(ev.t); if (pi < 0) return; n = own[0] || null; }
+      else {
+        const ib = near(ev.t - 20000), ia = near(ev.t + 20000); if (ib < 0 || ia < 0) return;
+        pi = ia;
+        const dv = q => Math.abs(pts[ia].R[q][k] - pts[ib].R[q][k]);
+        if (own.length) n = own.slice().sort((a, b) => dv(b) - dv(a))[0];
+      }
+      let x = X(pts[pi].t), y = n ? Y(pts[pi].R[n][k]) : Y(0) - 8;
+      for (let it = 0; it < 6 && marks.some(mk => Math.abs(mk.x - x) < 13 && Math.abs(mk.y - y) < 13); it++) y -= 13;
+      y = Math.max(m.t + 2, y);
+      marks.push({ x, y, ev, line: !!n });
+      if (!byPt.has(pi)) byPt.set(pi, []); byPt.get(pi).push(ev);
+    });
+    marks.forEach(({ x, y, ev }) => {
+      const gi = sv('g', { transform: `translate(${x.toFixed(1)},${y.toFixed(1)})`, 'aria-hidden': 'true' }, svg);
+      if (ev.kind === 'gol') {
+        sv('circle', { r: 5.5, class: 'ev-ball' }, gi);
+        sv('path', { d: 'M0,-2.4 L2.3,-0.7 L1.4,2 L-1.4,2 L-2.3,-0.7 Z', class: 'ev-ball-c' }, gi);
+      } else if (ev.kind === 'verm') {
+        sv('rect', { x: -3.5, y: -5, width: 7, height: 10, rx: 1.3, class: 'ev-card', transform: 'rotate(12)' }, gi);
+      } else {
+        sv('rect', { x: -10, y: -5.5, width: 20, height: 11, rx: 5.5, class: 'ev-fim' }, gi);
+        const tx = sv('text', { x: 0, y: 2.5, 'text-anchor': 'middle', class: 'ev-fim-t' }, gi); tx.textContent = 'FIM';
+      }
+    });
+    const evText = ev => {
+      const g = ev.g, A = byName[g.h].abbr, Bb = byName[g.a].abbr, who = ev.side === 'h' ? g.h : g.a;
+      const mn = ev.min != null ? ` ${ev.min}${ev.ext ? '+' + ev.ext : ''}'` : '';
+      if (ev.kind === 'gol') return `⚽ Gol ${ev.own ? 'contra a favor do' : 'do'} ${who}${mn} · ${A} ${ev.sc[0]}×${ev.sc[1]} ${Bb}`;
+      if (ev.kind === 'verm') return `Cartão vermelho para o ${who}${mn}`;
+      return `Fim de jogo · ${A} ${ev.sc[0]}×${ev.sc[1]} ${Bb}`;
+    };
     // end dots and labels; labels that would collide are spread apart with a short leader
     const last = pts[pts.length - 1], lx = X(last.t);
     const labs = ns.map(n => ({ n, y: Y(last.R[n][k]), ly: Y(last.R[n][k]) })).sort((a, b) => a.y - b.y);
@@ -2299,6 +2359,7 @@ function makeEngine(D) {
       ns.forEach((n, j) => { dots[j].setAttribute('cx', x); dots[j].setAttribute('cy', Y(p.R[n][k])); });
       tip.replaceChildren(el('div', 'tt', p.kind === 'antes' ? 'Antes dos jogos' : (p.kind === 'agora' ? `Agora · ${hm(p.t)}` : hm(p.t))));
       ns.slice().sort((a, b) => p.R[b][k] - p.R[a][k]).forEach(n => { const r = el('div', 'tr'); const i2 = el('i'); i2.style.background = cols[n]; r.append(i2, el('b', null, pct(p.R[n][k])), document.createTextNode(byName[n].abbr)); tip.append(r); });
+      (byPt.get(i) || []).forEach(ev => tip.append(el('div', 'te', evText(ev))));
       tip.hidden = false;
       const scale = wrap.clientWidth / Wd, tw = tip.offsetWidth;
       let left = x * scale + 12; if (left + tw > wrap.clientWidth) left = x * scale - tw - 12;
@@ -2320,7 +2381,7 @@ function makeEngine(D) {
     };
     wrap.onblur = hide;
     if (live.hover != null && live.hover < pts.length) show(live.hover); else hide();
-    $('lc-note').textContent = `${live.view === 'titulo' ? 'Chance de título' : 'Risco de rebaixamento'} ao longo do dia.${live.plan ? ' Recalculada a cada gol e a cada 15 minutos; os traços no eixo marcam os gols.' : ' Pontos registrados enquanto a página esteve aberta.'}`;
+    $('lc-note').textContent = `${live.view === 'titulo' ? 'Chance de título' : 'Risco de rebaixamento'} ao longo do dia.${live.plan ? ' Recalculada a cada gol e a cada 15 minutos. Ícones: gol, cartão vermelho e fim de jogo. Sobre cada linha ficam os lances dos jogos daquele time; na base, os dos outros jogos.' : ' Pontos registrados enquanto a página esteve aberta; os traços no eixo marcam os gols.'}`;
     // table view
     const tbx = $('lc-table'); tbx.replaceChildren();
     const tbl = el('table'), thd = el('thead'), hr = el('tr');

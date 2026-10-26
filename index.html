@@ -397,6 +397,8 @@ footer .credit { font-size: 14px; font-weight: 600; color: var(--ink-2); }
 .lg .ck.on { color: var(--live); font-weight: 500; }
 .lg.pre .sc { color: var(--muted); font-weight: 400; }
 .lg .abbr { display: none; }
+.rcard { display: inline-block; width: 7px; height: 10px; border-radius: 1.5px; background: #d03b3b; margin: 0 4px; vertical-align: 0; }
+.lg .sc { white-space: nowrap; }
 .live-sub { font-family: var(--font-data); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 400; margin-bottom: 6px; }
 .ldelta { width: 100%; border-collapse: collapse; font-size: 14px; }
 .ldelta th, .ldelta td { padding: 6px 4px; border-bottom: 1px solid var(--rule); text-align: right; white-space: nowrap; }
@@ -917,7 +919,7 @@ function makeEngine(D) {
         const lm = live ? live.mode[f] : 0;
         let x, y;
         if (lm === 1) { x = live.x[f]; y = live.y[f]; }
-        else if (lm === 2) { const r = live.rem[f]; x = live.x[f] + pois(lf * r, rand); y = live.y[f] + pois(uf * r, rand); }
+        else if (lm === 2) { const r = live.rem[f]; x = live.x[f] + pois(lf * r * live.fh[f], rand); y = live.y[f] + pois(uf * r * live.fa[f], rand); }
         else { x = pois(lf, rand); y = pois(uf, rand); }
         if (lm === 0 && fo >= 0) {
           let tries = 0;
@@ -972,7 +974,7 @@ function makeEngine(D) {
     out.__bypts = { all, rel, tit };
     return out;
   }
-  function newLive() { return { mode: new Int8Array(NF), x: new Int16Array(NF), y: new Int16Array(NF), rem: new Float64Array(NF) }; }
+  function newLive() { return { mode: new Int8Array(NF), x: new Int16Array(NF), y: new Int16Array(NF), rem: new Float64Array(NF), fh: new Float64Array(NF).fill(1), fa: new Float64Array(NF).fill(1) }; }
   return { newAcc, run, finalize, drawWeights, newLive, goalShareLeft, halftimeLeft, NF, N, TI };
 }
 // ENGINE END
@@ -1657,7 +1659,7 @@ function makeEngine(D) {
       `<strong>Valor de mercado.</strong> O valor dos elencos no Transfermarkt serve de ponto de partida para as forças. Com mais de 30 jogos disputados, os dados da temporada pesam muito mais.`,
       `<strong>Incerteza nas forças.</strong> Ninguém sabe a força exata de um time. Antes de sortear os placares, cada simulação sorteia um conjunto plausível de forças (aproximação de Laplace). No backtest, isso melhorou as previsões de rebaixamento e ficou praticamente neutro nas de título.`,
       `<strong>Força que muda com o tempo.</strong> Técnico novo, lesões, janela de transferências ou prioridade a outra competição mudam a força de um time no meio do caminho. Em cada simulação, a força de cada time oscila ao acaso semana a semana, e a oscilação acumulada cresce com a distância: em 6 semanas ela é tipicamente de ±7% nos gols esperados; em 20 semanas, ±13%. O tamanho foi calibrado em 20 temporadas, de 2006 a 2025.`,
-      ...(live.on ? [`<strong>Ao vivo.</strong> Durante os jogos, a página consulta o placar a cada minuto (fonte: ESPN) e refaz ${nf0.format(SIMS)} temporadas no seu aparelho. Num jogo em andamento, os gols que faltam seguem o mesmo modelo, na proporção do tempo que resta: na Série A de 2021 a 2024, 45% dos gols saíram no 1º tempo e 55% no 2º, 13% deles nos acréscimos. O placar parcial também conta como evidência sobre a força dos times. Expulsões não entram. Jogos encerrados entram na hora; na manhã seguinte, a atualização completa reajusta o modelo.`] : []),
+      ...(live.on ? [`<strong>Ao vivo.</strong> Durante os jogos, a página consulta o placar a cada minuto (fonte: ESPN) e refaz ${nf0.format(SIMS)} temporadas no seu aparelho. Num jogo em andamento, os gols que faltam seguem o mesmo modelo, na proporção do tempo que resta: na Série A de 2021 a 2024, 45% dos gols saíram no 1º tempo e 55% no 2º, 13% deles nos acréscimos. O placar parcial também conta como evidência sobre a força dos times. Depois de uma expulsão, o time com um a menos passa a marcar 0,62 vez o normal e o adversário 1,43 vez, como na Série A de 2014 a 2024. Jogos encerrados entram na hora; na manhã seguinte, a atualização completa reajusta o modelo.`] : []),
       `<strong>Desempate.</strong> Pontos, vitórias, saldo de gols e gols marcados, como no regulamento.`,
       `<strong>Pontos que bastam.</strong> A chance de título ou de queda para cada pontuação final é a fração das simulações em que um time terminou com aqueles pontos e foi campeão ou caiu. No rebaixamento, a linha “Média” junta todos os times; a linha de cada time usa só as simulações dele. Elas diferem porque o desempate começa pelo número de vitórias: com os mesmos pontos, quem empatou mais fica atrás.`
     ];
@@ -1704,6 +1706,9 @@ function makeEngine(D) {
 
   // ---------- live: scores from the ESPN feed, recomputed in the browser ----------
   const FEED = 'https://site.api.espn.com/apis/site/v2/sports/soccer/bra.1/scoreboard';
+  // red cards: after a sending-off, Série A 2014–2024 (556 games) shows the team with fewer players scoring 0.62×
+  // and its opponent 1.43× the usual rate for the rest of the game
+  const RED_OWN = 0.62, RED_OPP = 1.43;
   const TZ = 'America/Sao_Paulo';
   const FIX = new Map(); D.fixtures.forEach((f, i) => FIX.set(f.h + '|' + f.a, i));
   const ALIASES = [
@@ -1754,6 +1759,7 @@ function makeEngine(D) {
     const kickoff = Date.parse(ev.date || comp.date || '') || null;
     // goals, to rebuild how the score evolved (null when the feed doesn't add up)
     let goals = [];
+    const reds = { h: 0, a: 0 };
     if (phase === 'in' || phase === 'ht' || phase === 'post') {
       const hid = String((H.team || {}).id || ''), aid = String((A.team || {}).id || '');
       (comp.details || []).forEach(d => {
@@ -1765,6 +1771,12 @@ function makeEngine(D) {
         const c = clockOf((d.clock || {}).displayValue, (d.clock || {}).value);
         goals.push({ side, minute: c.minute, ext: c.ext, own: !!d.ownGoal });
       });
+      (comp.details || []).forEach(d => {
+        const txt = String((d.type || {}).text || '');
+        if (!(d.redCard === true || /red card/i.test(txt))) return;
+        const tid = String((d.team || {}).id || '');
+        if (tid && tid === hid) reds.h++; else if (tid && tid === aid) reds.a++;
+      });
       const count = gs => [gs.filter(g => g.side === 'h').length, gs.filter(g => g.side === 'a').length];
       let [gh, ga] = count(goals);
       if (goals.some(g => !g.side) || gh !== hs || ga !== as) {
@@ -1774,7 +1786,7 @@ function makeEngine(D) {
       }
     }
     const key = h + '|' + a;
-    return { id: String(ev.id || key), h, a, fi: FIX.has(key) ? FIX.get(key) : -1, phase, hs, as, period, minute: ck.minute, ext: ck.ext, kickoff, goals };
+    return { id: String(ev.id || key), h, a, fi: FIX.has(key) ? FIX.get(key) : -1, phase, hs, as, period, minute: ck.minute, ext: ck.ext, kickoff, goals, reds };
   }
   const fmtYMD = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
   const fmtHM = new Intl.DateTimeFormat('pt-BR', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false });
@@ -1865,8 +1877,10 @@ function makeEngine(D) {
       else if (g.phase === 'in' || g.phase === 'ht') {
         arr.mode[g.fi] = 2; arr.x[g.fi] = g.hs; arr.y[g.fi] = g.as;
         arr.rem[g.fi] = g.phase === 'ht' ? E.halftimeLeft() : E.goalShareLeft(g.period, g.minute, g.ext);
+        const rh = Math.min(2, g.reds ? g.reds.h : 0), ra = Math.min(2, g.reds ? g.reds.a : 0);
+        arr.fh[g.fi] = Math.pow(RED_OWN, rh) * Math.pow(RED_OPP, ra); arr.fa[g.fi] = Math.pow(RED_OWN, ra) * Math.pow(RED_OPP, rh);
       } else return;
-      parts.push(`${g.fi}:${arr.mode[g.fi]}:${g.hs}-${g.as}:${arr.rem[g.fi].toFixed(3)}`);
+      parts.push(`${g.fi}:${arr.mode[g.fi]}:${g.hs}-${g.as}:${arr.rem[g.fi].toFixed(3)}:${g.reds ? g.reds.h + '' + g.reds.a : ''}`);
       state.fixed.delete(g.fi);
     });
     const key = parts.sort().join(',');
@@ -2056,9 +2070,14 @@ function makeEngine(D) {
     const ul = $('live-games'); ul.replaceChildren();
     list.forEach(g => {
       const li = el('li', 'lg' + (g.phase === 'pre' || g.phase === 'off' ? ' pre' : ''));
-      const th = el('span', 't h'); th.append(el('span', 'full', g.h), el('span', 'abbr', byName[g.h].abbr));
-      const ta = el('span', 't a'); ta.append(el('span', 'full', g.a), el('span', 'abbr', byName[g.a].abbr));
-      const sc = el('span', 'sc', g.phase === 'pre' || g.phase === 'off' ? '×' : `${g.hs} × ${g.as}`);
+      const th = el('span', 't h'); const ta = el('span', 't a');
+      const rc = (box, n) => { for (let k = 0; k < n; k++) { const c = el('span', 'rcard'); c.title = 'Cartão vermelho'; box.append(c); } };
+      th.append(el('span', 'full', g.h), el('span', 'abbr', byName[g.h].abbr));
+      ta.append(el('span', 'full', g.a), el('span', 'abbr', byName[g.a].abbr));
+      const sc = el('span', 'sc');
+      if (g.reds) rc(sc, g.reds.h);
+      sc.append(document.createTextNode(g.phase === 'pre' || g.phase === 'off' ? '×' : `${g.hs} × ${g.as}`));
+      if (g.reds) rc(sc, g.reds.a);
       let ck = '', on = false;
       if (g.phase === 'in') { ck = g.ext ? `${g.minute}'+${g.ext}` : `${g.minute}'`; on = true; }
       else if (g.phase === 'ht') { ck = 'Intervalo'; on = true; }
@@ -2070,7 +2089,7 @@ function makeEngine(D) {
     });
     renderMoves();
     renderChart();
-    $('live-foot').textContent = `Placar ao vivo: ESPN. As chances são recalculadas no seu aparelho a cada minuto, com ${nf0.format(SIMS)} temporadas simuladas; num jogo em andamento, os gols que faltam são sorteados pelo tempo que resta. Expulsões não entram. A atualização completa do modelo sai na manhã seguinte.`;
+    $('live-foot').textContent = `Placar ao vivo: ESPN. As chances são recalculadas no seu aparelho a cada minuto, com ${nf0.format(SIMS)} temporadas simuladas; num jogo em andamento, os gols que faltam são sorteados pelo tempo que resta e ajustados por expulsões. A atualização completa do modelo sai na manhã seguinte.`;
   }
   function upcoming() {
     const now = Date.now();

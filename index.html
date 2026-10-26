@@ -365,7 +365,8 @@ footer .credit { font-size: 12px; font-weight: 400; color: var(--muted); }
 /* credibility row */
 .trust { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; }
 @media (max-width: 420px) { .trust { gap: 6px 10px; } .trust a { font-size: 12.5px; gap: 5px; } }
-.trust a { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; color: var(--ink); text-decoration: none; }
+.trust a { display: inline-flex; align-items: flex-start; gap: 6px; font-size: 13.5px; font-weight: 600; line-height: 1.3; color: var(--ink); text-decoration: none; text-wrap: balance; }
+.trust a::before { margin-top: 0.15em; }
 .trust a::before { content: ""; width: 14px; height: 14px; flex: none; border-radius: 50%; background: var(--lib) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M3.5 7.2l2.2 2.2 4.8-4.8' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/14px no-repeat; }
 .trust a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
@@ -494,7 +495,7 @@ footer .credit { font-size: 12px; font-weight: 400; color: var(--muted); }
     <ul class="trust" aria-label="Sobre o modelo">
       <li><a href="#metodo">Testado em 18 temporadas</a></li>
       <li><a href="#live" id="trust-live">Ao vivo, a cada gol</a></li>
-      <li><a href="#metodo">Valor de mercado + xG</a></li>
+      <li><a href="#metodo">Além do placar: valor do elenco e chances criadas&nbsp;(xG)</a></li>
     </ul>
     <p class="status-line" id="status-line" role="status"><span class="sdot" aria-hidden="true"></span><span id="status-text"></span></p>
   </header>
@@ -1662,7 +1663,7 @@ function makeEngine(D) {
     const items = [
       `<strong>Gols como sorteio.</strong> Em cada jogo, os gols de cada time seguem uma distribuição de Poisson. A média combina o ataque de um time, a defesa do outro e o mando de campo: um time médio marca ${nf2.format(M.home_goals)} gol por jogo em casa e ${nf2.format(M.away_goals)} fora.`,
       `<strong>Peso que cai com o tempo.</strong> As forças saem de ${nf0.format(D.meta.n_hist)} jogos da Série A desde 2003, mas quanto mais antigo o jogo, menos ele pesa: um jogo de seis meses atrás vale ${w(0.5)}% de um jogo de hoje, e um de um ano atrás, ${w(1)}%. Na prática, contam sobretudo os últimos 12 meses. Esse ritmo foi o que errou menos na busca em grade (veja Validação). Jogos de 2020 e 2021 sem público entram com mando de campo reduzido, estimado nos dados.`,
-      `<strong>Valor de mercado como referência.</strong> Cada time parte do nível que o valor do seu elenco no Transfermarkt indica na data de cada jogo, e os resultados afastam a força desse nível: tipicamente até ±${dev}%, tamanho que também saiu da busca em grade. Com o dobro do valor de elenco, o ponto de partida é marcar ${mvA}% mais gols e sofrer ${mvD}% menos, efeito estimado nos jogos desde 2008. Em 2026, o valor usado é o de 05/10 (Transfermarkt, via Exame).`,
+      `<strong>Valor de mercado como referência.</strong> Resultado tem muito acaso; o valor do elenco e as chances criadas (xG, abaixo) mostram antes o que a tabela ainda não mostrou. Cada time parte do nível que o valor do seu elenco no Transfermarkt indica na data de cada jogo, e os resultados afastam a força desse nível: tipicamente até ±${dev}%, tamanho que também saiu da busca em grade. Com o dobro do valor de elenco, o ponto de partida é marcar ${mvA}% mais gols e sofrer ${mvD}% menos, efeito estimado nos jogos desde 2008. Em 2026, o valor usado é o de 05/10 (Transfermarkt, via Exame).`,
       `<strong>xG de 2026.</strong> O total de gols esperados (xG) feitos e sofridos por cada time na temporada entra como evidência extra, com ${omTxt} gols da temporada: entre os pesos testados, de zero a três, foi o que melhor previu as tabelas de 2019 a 2025. O xG é reescalado para que a liga some o mesmo total de gols reais.`,
       `<strong>Incerteza nas forças.</strong> Ninguém sabe a força exata de um time. Antes de sortear os placares, cada simulação sorteia um conjunto plausível de forças (aproximação de Laplace), com a incerteza que os próprios dados indicam.`,
       `<strong>Força que muda com o tempo.</strong> Técnico novo, lesões, janela de transferências ou prioridade a outra competição mudam a força de um time no meio do caminho. Em cada simulação, a força de cada time oscila ao acaso semana a semana, e a oscilação acumulada cresce com a distância: em 6 semanas ela é tipicamente de ±${osc(6)}% nos gols esperados; em 20 semanas, ±${osc(20)}%. O tamanho também saiu da busca em grade (veja Validação).`,

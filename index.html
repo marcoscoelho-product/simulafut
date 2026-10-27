@@ -23,6 +23,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <style>html, body { margin: 0; }</style>
 <script>window.SIMULAFUT_LIVE = true;</script>
+<script>try { const t = localStorage.getItem('simulafut-tema'); if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -323,6 +324,13 @@ footer .credit { font-size: 12px; font-weight: 400; color: var(--muted); }
 .social a { display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; opacity: .5; transition: opacity .15s; }
 .social a:hover, .social a:focus-visible { opacity: .9; }
 .social img { width: 16px; height: 16px; display: block; }
+.topact { display: flex; align-items: center; gap: 4px; }
+.themebtn { display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; border: 0; padding: 0; background: none; color: var(--ink); opacity: .5; cursor: pointer; transition: opacity .15s; }
+.themebtn:hover, .themebtn:focus-visible { opacity: .9; }
+.themebtn svg { width: 17px; height: 17px; display: block; }
+.themebtn .moon { display: block; } .themebtn .sun { display: none; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .themebtn .moon { display: none; } :root:not([data-theme="light"]) .themebtn .sun { display: block; } }
+:root[data-theme="dark"] .themebtn .moon { display: none; } :root[data-theme="dark"] .themebtn .sun { display: block; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .social img { filter: invert(1); } }
 :root[data-theme="dark"] .social img { filter: invert(1); }
 .bmark { width: 22px; height: 22px; flex: none; }
@@ -520,10 +528,13 @@ footer .credit { font-size: 12px; font-weight: 400; color: var(--muted); }
   <div class="brandbar">
     <div class="brandrow">
     <div class="brand"><svg class="bmark" viewBox="10 10 44 44" aria-hidden="true"><path d="M32.00,22.00 L32.00,11.00 A21,21 0 0 1 51.97,25.51 L41.51,28.91 Z" fill="#0d366b"/><path d="M41.51,28.91 L51.97,25.51 A21,21 0 0 1 44.34,48.99 L37.88,40.09 Z" fill="#256abf"/><path d="M37.88,40.09 L44.34,48.99 A21,21 0 0 1 19.66,48.99 L26.12,40.09 Z" fill="#6da7ec"/><path d="M26.12,40.09 L19.66,48.99 A21,21 0 0 1 12.03,25.51 L22.49,28.91 Z" fill="#cde2fb"/><path d="M22.49,28.91 L12.03,25.51 A21,21 0 0 1 32.00,11.00 L32.00,22.00 Z" fill="#d03b3b"/><path d="M32.00,22.00 L41.51,28.91 L37.88,40.09 L26.12,40.09 L22.49,28.91 Z" fill="var(--ink)"/><g stroke="var(--bg)" stroke-width="2.6" stroke-linecap="round" fill="none"><line x1="32.00" y1="22.00" x2="32.00" y2="11.00"/><line x1="41.51" y1="28.91" x2="51.97" y2="25.51"/><line x1="37.88" y1="40.09" x2="44.34" y2="48.99"/><line x1="26.12" y1="40.09" x2="19.66" y2="48.99"/><line x1="22.49" y1="28.91" x2="12.03" y2="25.51"/><path d="M32.00,22.00 L41.51,28.91 L37.88,40.09 L26.12,40.09 L22.49,28.91 Z"/></g></svg><span class="wordmark">Simulafut</span></div>
+      <div class="topact">
       <nav class="social" aria-label="Simulafut nas redes">
         <a href="https://www.instagram.com/simulafut.ia.br/" target="_blank" rel="noopener" aria-label="Instagram @simulafut.ia.br" title="Instagram @simulafut.ia.br"><img src="https://cdn.jsdelivr.net/npm/simple-icons@13.0.0/icons/instagram.svg" alt="Instagram" width="16" height="16"></a>
         <a href="https://x.com/simulafutia" target="_blank" rel="noopener" aria-label="X @simulafutia" title="X @simulafutia"><img src="https://cdn.jsdelivr.net/npm/simple-icons@13.0.0/icons/x.svg" alt="X" width="16" height="16"></a>
       </nav>
+      <button type="button" class="themebtn" id="themebtn" aria-label="Mudar para o modo escuro" title="Modo escuro"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg></button>
+      </div>
     </div>
     <div class="bstrip" aria-hidden="true"><i style="background:#0d366b"></i><i style="background:#0d366b"></i><i style="background:#0d366b"></i><i style="background:#184f95"></i><i style="background:#184f95"></i><i style="background:#256abf"></i><i style="background:#256abf"></i><i style="background:#256abf"></i><i style="background:#3987e5"></i><i style="background:#3987e5"></i><i style="background:#6da7ec"></i><i style="background:#6da7ec"></i><i style="background:#9ec5f4"></i><i style="background:#9ec5f4"></i><i style="background:#cde2fb"></i><i style="background:#cde2fb"></i><i style="background:#d03b3b;opacity:.35"></i><i style="background:#d03b3b;opacity:.57"></i><i style="background:#d03b3b;opacity:.78"></i><i style="background:#d03b3b"></i></div>
   </div>
@@ -837,10 +848,20 @@ function makeEngine(D) {
     pts: D.teams.map(t => t.pts), w: D.teams.map(t => t.v),
     sg: D.teams.map(t => t.sg), gf: D.teams.map(t => t.gp)
   };
+  // Poisson by inversion: exactly one uniform per draw, and the count grows smoothly with the rate, so two runs with
+  // the same random numbers and slightly different rates (a few minutes later in a game) give nearly the same results
   function pois(l, rand) {
-    const L = Math.exp(-l); let k = 0, p = rand();
-    while (p > L) { k++; p *= rand(); }
+    const u = rand(); let p = Math.exp(-l), c = p, k = 0;
+    while (u > c && k < 60) { k++; p *= l / k; c += p; }
     return k;
+  }
+  // seeded generator that restarts at each simulation (rand.at(i)): simulation i uses the same random numbers in every
+  // run, whatever happened in the simulations before it, so the chart's points differ only by what changed in the games
+  function seeded(seed) {
+    let a = 0;
+    const r = function () { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+    r.at = i => { a = (seed ^ Math.imul(i + 1, 0x9E3779B1)) | 0; r(); };
+    return r;
   }
   function oc(x, y) { return x > y ? 0 : (x === y ? 1 : 2); }
   function newAcc() {
@@ -947,6 +968,7 @@ function makeEngine(D) {
     const key = new Float64Array(N); const order = new Array(N); const DR = new Float64Array(N * W);
     const cmp = (i, j) => key[j] - key[i];
     for (let s = 0; s < count; s++) {
+      if (rand.at) rand.at(acc.n);
       const k = cum ? pick(cum, rand()) : Math.floor(rand() * K);
       const L = M._lam[k], U = M._nu[k];
       for (let t = 0; t < N; t++) { pts[t] = base.pts[t]; w[t] = base.w[t]; sg[t] = base.sg[t]; gf[t] = base.gf[t]; }
@@ -957,7 +979,7 @@ function makeEngine(D) {
         if (T2 > 0) { const ez = Math.exp(DR[h * W + WK[f]] - DR[a * W + WK[f]]); lf *= ez; uf /= ez; }
         const lm = live ? live.mode[f] : 0;
         let x, y;
-        if (lm === 1) { x = live.x[f]; y = live.y[f]; }
+        if (lm === 1) { x = live.x[f]; y = live.y[f]; rand(); rand(); }
         else if (lm === 2) { const r = live.rem[f]; x = live.x[f] + pois(lf * r * live.fh[f], rand); y = live.y[f] + pois(uf * r * live.fa[f], rand); }
         else { x = pois(lf, rand); y = pois(uf, rand); }
         if (lm === 0 && fo >= 0) {
@@ -1034,7 +1056,7 @@ function makeEngine(D) {
     }
     const t = h + d + a; return { h: h / t, d: d / t, a: a / t, best: [best[0], best[1], best[2] / t] };
   }
-  return { newAcc, run, finalize, drawWeights, newLive, goalShareLeft, halftimeLeft, scoreDist, NF, N, TI };
+  return { newAcc, run, finalize, drawWeights, newLive, goalShareLeft, halftimeLeft, scoreDist, seeded, NF, N, TI };
 }
 // ENGINE END
 
@@ -1267,7 +1289,9 @@ function makeEngine(D) {
     rows.forEach((t, i) => {
       const p = i + 1, r = R[t.name], b = ref && ref[t.name];
       const tr = el('tr'); zoneRow(tr, p);
-      tr.append(el('td', 'c-pos c-num', String(p)), clubCell(t));
+      const cc = clubCell(t);
+      if (cur(t.name).live) { const mk = el('span', 'lv-mark'); mk.title = 'Jogando agora'; cc.append(mk); }
+      tr.append(el('td', 'c-pos c-num', String(p)), cc);
       const pj = el('td', 'c-proj');
       pj.append(document.createTextNode(nf0.format(Math.round(r.xp))));
       pj.append(el('span', 'rng', `${r.p05}–${r.p95}`));
@@ -1288,7 +1312,7 @@ function makeEngine(D) {
     $('tab-desc').textContent = scen
       ? `Cenário com ${state.fixed.size} resultado${state.fixed.size > 1 ? 's' : ''} fixado${state.fixed.size > 1 ? 's' : ''}; setas: mudança vs. cenário base.`
       : live.res
-        ? 'Ao vivo: como a tabela deve terminar, com os placares de agora.'
+        ? `Ao vivo: como a tabela deve terminar, com os placares de agora${Object.values(CUR || {}).some(x => x.live) ? ' (● = jogando)' : ''}. Recalculada a cada minuto de jogo.`
         : `Como a tabela deve terminar, em ${nf0.format(D.models.xg.sims)} temporadas simuladas.`;
     $('tab-note').textContent = (live.res && !scen ? 'Setas: mudança em pontos percentuais desde antes dos jogos. ' : '') + 'Ordem pela pontuação final média nas simulações; # é a posição projetada. Pts traz essa média e, embaixo, a faixa onde caem 90% das simulações. Hoje mostra a posição e os pontos atuais. — = não aconteceu em nenhuma simulação. Faixa lateral: G4 e G6 em azul, Z4 em vermelho.';
   }
@@ -2027,18 +2051,23 @@ function makeEngine(D) {
     Object.values(tb).sort((a, b) => (b.pts - a.pts) || (b.v - a.v) || (b.sg - a.sg) || (b.gp - a.gp) || (a.pos - b.pos)).forEach((r, i) => { r.pos = i + 1; });
     return tb;
   }
+  // same random numbers in every recomputation of the day (E.seeded): the chart moves only with what changed in the games
+  const HSIMS = 4000, HSEED = 20261026;
   function runLive() {
     const token = ++live.token, arr = live.arr;
     const M = D.models[state.model], none = new Int8Array(E.NF).fill(-1);
     const cum = E.drawWeights(M, none, arr);
     live.cum = cum;
-    const acc = E.newAcc();
+    const acc = E.newAcc(), rand = E.seeded(HSEED);
+    let res4k = null;
     live.running = true;
     const step = () => {
       if (token !== live.token) return;
-      E.run(acc, M, none, Math.min(3000, SIMS - acc.n), Math.random, cum, arr);
+      E.run(acc, M, none, Math.min(acc.n < HSIMS ? HSIMS - acc.n : 3000, SIMS - acc.n), rand, cum, arr);
+      // the first HSIMS simulations are the same ones the chart's past points use: kept to anchor the chart
+      if (acc.n === HSIMS) res4k = slim(E.finalize(acc));
       if (acc.n < SIMS) { setTimeout(step, 0); return; }
-      live.res = E.finalize(acc); live.resAt = Date.now(); live.running = false;
+      live.res = E.finalize(acc); live.res4k = res4k; live.resAt = Date.now(); live.running = false;
       noteObserved();
       renderAfterLive();
       if (state.fixed.size) scheduleRun();
@@ -2057,7 +2086,7 @@ function makeEngine(D) {
   try { const o = JSON.parse(localStorage.getItem(OBS_KEY) || '[]'); if (Array.isArray(o)) live.observed = o.filter(p => p && p.t && p.R); } catch (e) {}
 
   // ---- how the day went: rebuild the state at past moments from the goal minutes ----
-  const HT_BREAK = 15, H1_LEN = 48, H2_LEN = 52, HSIMS = 4000;
+  const HT_BREAK = 15, H1_LEN = 48, H2_LEN = 52;
   function goalWall(g, gl) {
     const k = g.kickoff;
     if (gl.minute < 45 || (gl.minute === 45 && !gl.ext)) return k + (gl.minute - 0.5) * 60000;
@@ -2096,7 +2125,6 @@ function makeEngine(D) {
     return { arr: parts.length ? arr : null, sig: parts.sort().join(',') };
   }
   function canRebuild(games) { return games.length && games.every(g => g.kickoff && g.goals); }
-  function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
   function queueHistory() {
     const tok = ++live.histToken;
     const games = appliedGames();
@@ -2128,7 +2156,7 @@ function makeEngine(D) {
       if (tok !== live.histToken) return;
       if (i >= todo.length) { renderChart(); return; }
       const st = todo[i++];
-      const cum = E.drawWeights(M, none, st.arr), acc = E.newAcc(), rand = mulberry32(20261026);
+      const cum = E.drawWeights(M, none, st.arr), acc = E.newAcc(), rand = E.seeded(HSEED);
       const step = () => {
         if (tok !== live.histToken) return;
         E.run(acc, M, none, Math.min(2000, HSIMS - acc.n), rand, cum, st.arr);
@@ -2150,9 +2178,14 @@ function makeEngine(D) {
     const B = slim(official());
     const t0 = Math.min(...games.map(g => g.kickoff || live.resAt)) - 5 * 60000;
     const pts = [{ t: t0, R: B, kind: 'antes' }];
-    if (live.plan) live.plan.forEach(p => { const R = p.sig ? live.hist.get(p.sig) : B; if (R) pts.push({ t: p.t, R }); });
+    // past points come from HSIMS simulations; shifted by the gap between the current state with all SIMS and with the
+    // first HSIMS (the same simulations), so the line meets the current value without a jump at the end
+    const A = slim(live.res), A4 = live.res4k;
+    const adj = R => { if (!A4) return R; const o = {}; T.forEach(t => { const n = t.name, c = v => Math.min(1, Math.max(0, v));
+      o[n] = { title: c(R[n].title + A[n].title - A4[n].title), z4: c(R[n].z4 + A[n].z4 - A4[n].z4) }; }); return o; };
+    if (live.plan) live.plan.forEach(p => { const R = p.sig ? live.hist.get(p.sig) : B; if (R) pts.push({ t: p.t, R: p.sig ? adj(R) : R }); });
     else live.observed.forEach(o => { if (o.t > t0 && o.t < live.resAt - 30000) pts.push(o); });
-    pts.push({ t: live.resAt, R: slim(live.res), kind: 'agora' });
+    pts.push({ t: live.resAt, R: A, kind: 'agora' });
     return pts.sort((a, b) => a.t - b.t);
   }
 
@@ -2599,6 +2632,21 @@ function makeEngine(D) {
   document.querySelectorAll('details.fold').forEach(d => d.addEventListener('toggle', () => { if (d.open) { renderStrength(); } }));
 
   window.matchMedia('(max-width: 560px)').addEventListener('change', renderStrength);
+  // light/dark: follows the system until the visitor picks one; picking the system's own theme goes back to following it
+  (function () {
+    const btn = $('themebtn'), sys = window.matchMedia('(prefers-color-scheme: dark)');
+    const cur = () => document.documentElement.dataset.theme || (sys.matches ? 'dark' : 'light');
+    const label = () => { const d = cur() === 'dark'; btn.setAttribute('aria-label', d ? 'Mudar para o modo claro' : 'Mudar para o modo escuro'); btn.title = d ? 'Modo claro' : 'Modo escuro'; };
+    btn.addEventListener('click', () => {
+      const next = cur() === 'dark' ? 'light' : 'dark';
+      const follow = next === (sys.matches ? 'dark' : 'light');
+      if (follow) delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = next;
+      try { if (follow) localStorage.removeItem('simulafut-tema'); else localStorage.setItem('simulafut-tema', next); } catch (e) {}
+      label();
+    });
+    sys.addEventListener('change', label);
+    label();
+  })();
 })();
 </script>
 </body>

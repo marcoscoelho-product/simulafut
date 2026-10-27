@@ -272,6 +272,9 @@ table.mini th:first-child, table.mini td:first-child { text-align: left; }
 .str .form.head i { background: none; color: var(--muted); font-size: 9px; height: 12px; }
 .str .lab.head { font-family: var(--font-data); font-size: 10px; font-weight: 400; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .str .form i.X { background: none; box-shadow: inset 0 0 0 1px var(--rule-strong); }
+.str .form i.onair { animation: formblink 1.4s ease-in-out infinite; outline: 2px solid var(--live); outline-offset: 1px; }
+@keyframes formblink { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .str .form i.onair { animation: none; } }
 .str .form i.V { background: var(--lib); } .str .form i.E { background: var(--rule-strong); color: var(--ink); } .str .form i.D { background: var(--z4); }
 .str .val.two { font-size: 12px; line-height: 1.15; }
 .str-insight { font-size: 14px; color: var(--ink); background: var(--surface); border-left: 3px solid var(--lib); padding: 8px 12px; border-radius: 0 8px 8px 0; max-width: 62ch; }
@@ -1597,14 +1600,31 @@ function makeEngine(D) {
           box.append(lab(r.t), bar, v);
         });
     } else {
-      const FR = D.meta.form_rounds || [];
+      // last ten rounds, with today's games: a game under way shows the result of the score now and blinks; a finished
+      // one stays. If today's games belong to a round after the window, the window moves forward one round.
+      const FR0 = D.meta.form_rounds || [];
+      const cell = {}; T.forEach(t => { cell[t.name] = {}; [...t.form].forEach((c, k) => { cell[t.name][FR0[k]] = { c, on: false }; }); });
+      let top = FR0.length ? FR0[FR0.length - 1] : 0, anyOn = false;
+      appliedGames().forEach(g => {
+        const r = (D.fixtures[g.fi] || {}).r; if (r == null) return;
+        const on = g.phase !== 'post'; anyOn = anyOn || on;
+        const ch = (x, y) => x > y ? 'V' : x === y ? 'E' : 'D';
+        cell[g.h][r] = { c: ch(g.hs, g.as), on, sc: `${g.hs}×${g.as}`, vs: g.a }; cell[g.a][r] = { c: ch(g.as, g.hs), on, sc: `${g.as}×${g.hs}`, vs: g.h };
+        if (r > top) top = r;
+      });
+      const FR = FR0.length && top > FR0[FR0.length - 1] ? Array.from({ length: FR0.length }, (_, i) => top - FR0.length + 1 + i) : FR0;
       $('str-desc').textContent = `Resultados nas últimas dez rodadas da Série A 2026, da ${FR[0]}ª à ${FR[FR.length - 1]}ª, e os pontos somados nelas.`;
-      $('str-note').textContent = 'V = vitória, E = empate, D = derrota. Casa vazia: jogo daquela rodada ainda não disputado. Ordem pelos pontos nessas rodadas.';
+      $('str-note').textContent = 'V = vitória, E = empate, D = derrota. Casa vazia: jogo daquela rodada ainda não disputado.' + (anyOn ? ' Piscando: jogo em andamento, com o placar de agora.' : '') + ' Ordem pelos pontos nessas rodadas.';
       const hf = el('span', 'form head'); FR.forEach(r => hf.append(el('i', null, String(r))));
       box.append(el('span', 'lab head', 'Rodada'), hf, el('span'));
-      T.map(t => ({ t, p: [...t.form].reduce((s, c) => s + (c === 'V' ? 3 : c === 'E' ? 1 : 0), 0) }))
-        .sort((x, y) => (y.p - x.p) || (x.t.pos - y.t.pos)).forEach(r => {
-          const f = el('span', 'form'); [...r.t.form].forEach((c, k) => { const i = el('i', c === '-' ? 'X' : c, c === '-' ? '' : c); i.title = `Rodada ${FR[k]}`; f.append(i); });
+      const pv = c => c === 'V' ? 3 : c === 'E' ? 1 : 0;
+      T.map(t => ({ t, cs: FR.map(r => cell[t.name][r] || { c: '-' }) })).map(r => Object.assign(r, { p: r.cs.reduce((s, x) => s + pv(x.c), 0) }))
+        .sort((x, y) => (y.p - x.p) || (cur(x.t.name).pos - cur(y.t.name).pos)).forEach(r => {
+          const f = el('span', 'form');
+          r.cs.forEach((x, k) => {
+            const i = el('i', (x.c === '-' ? 'X' : x.c) + (x.on ? ' onair' : ''), x.c === '-' ? '' : x.c);
+            i.title = `Rodada ${FR[k]}` + (x.sc ? ` · ${x.sc} contra o ${x.vs}${x.on ? ', em andamento' : ''}` : ''); f.append(i);
+          });
           box.append(lab(r.t), f, el('span', 'val', `${r.p} pt${r.p === 1 ? '' : 's'}`));
         });
     }

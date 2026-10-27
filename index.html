@@ -464,6 +464,8 @@ footer .credit { font-size: 12px; font-weight: 400; color: var(--muted); }
 .lc-wrap .goal { stroke: var(--rule-strong); stroke-width: 1; }
 .lc-wrap .xh { stroke: var(--ink-2); stroke-width: 1; }
 .lc-wrap .ring { stroke: var(--surface); stroke-width: 2; }
+.lc-wrap .brk-bg { fill: var(--surface); }
+.lc-wrap .brk { stroke: var(--muted); stroke-width: 1.2; stroke-linecap: round; }
 .lc-wrap .evl { stroke: var(--ink-2); stroke-width: 0.8; stroke-dasharray: 1.5 3; opacity: .55; }
 .lc-wrap svg text.evt { font-size: 9.5px; fill: var(--ink-2); }
 .lc-wrap svg text.evt.red { fill: #d03b3b; }
@@ -2172,9 +2174,26 @@ function makeEngine(D) {
   }
   let chartTimer = null;
   function chartSoon() { if (chartTimer) return; chartTimer = setTimeout(() => { chartTimer = null; renderChart(); }, 300); }
+  // stretches of the day with a game on (from 5 min before a kickoff to its final whistle, or to now while it's on);
+  // stretches less than 20 min apart are joined. The chart's time axis shows only these, with a small break between them.
+  function playWindows() {
+    const games = appliedGames(), now = live.resAt || Date.now();
+    const w = games.filter(g => g.kickoff).map(g => [g.kickoff - 5 * 60000, g.phase === 'post' ? gameEnd(g) : Math.max(g.kickoff, now)]).sort((a, b) => a[0] - b[0]);
+    const out = [];
+    w.forEach(([a, b]) => { const L = out[out.length - 1]; if (L && a <= L[1] + 20 * 60000) L[1] = Math.max(L[1], b); else out.push([a, b]); });
+    return out;
+  }
   function chartPoints() {
     const games = appliedGames();
     if (!games.length || !live.res) return [];
+    const win = playWindows(), inWin = t => win.some(([a, b]) => t >= a - 1000 && t <= b + 90000);
+    return chartPointsAll().filter(p => p.kind || inWin(p.t)).map(p => {
+      if (p.kind !== 'agora' || !win.length) return p;
+      const L = win[win.length - 1]; return Object.assign({}, p, { t: Math.min(p.t, Math.max(L[1], L[0] + 30 * 60000)) });
+    });
+  }
+  function chartPointsAll() {
+    const games = appliedGames();
     const B = slim(official());
     const t0 = Math.min(...games.map(g => g.kickoff || live.resAt)) - 5 * 60000;
     const pts = [{ t: t0, R: B, kind: 'antes' }];
@@ -2419,7 +2438,24 @@ function makeEngine(D) {
     const Wd = Math.max(280, Math.round(wrap.clientWidth || 600)), Ht = (Wd < 480 ? 196 : 228) + (hasEv ? 22 : 0);
     const m = { l: 38, r: 66, t: hasEv ? 32 : 10, b: 24 };
     const x0 = pts[0].t, x1 = Math.max(pts[pts.length - 1].t, x0 + 30 * 60000);
-    const X = t => m.l + (t - x0) / (x1 - x0) * (Wd - m.l - m.r);
+    // piecewise axis: the play windows side by side, each break 14 px wide
+    const segs = []; playWindows().forEach(([a, b]) => { a = Math.max(a, x0); b = Math.min(b, x1); if (b > a) segs.push([a, b]); });
+    if (!segs.length) segs.push([x0, x1]);
+    segs[0][0] = x0; segs[segs.length - 1][1] = x1;
+    const GAP = 14, dur = segs.reduce((s2, [a, b]) => s2 + b - a, 0), pxT = (Wd - m.l - m.r - GAP * (segs.length - 1)) / dur;
+    const segX = []; { let x = m.l; segs.forEach(([a, b]) => { segX.push(x); x += (b - a) * pxT + GAP; }); }
+    const X = t => {
+      for (let i = 0; i < segs.length; i++) {
+        const [a, b] = segs[i];
+        if (t <= b || i === segs.length - 1) {
+          if (t >= a) return segX[i] + (t - a) * pxT;
+          if (i === 0) return segX[0];
+          const e = segX[i - 1] + (segs[i - 1][1] - segs[i - 1][0]) * pxT;   // inside a break
+          return e + (t - segs[i - 1][1]) / (a - segs[i - 1][1]) * GAP;
+        }
+      }
+      return Wd - m.r;
+    };
     // vertical range: only what the lines need (plus room at the bottom for the strip of other games' events), snapped
     // to round steps, so the moves stand out
     const vals = pts.flatMap(p => ns.map(n => p.R[n][k]));
@@ -2434,8 +2470,21 @@ function makeEngine(D) {
       'aria-label': `${live.view === 'titulo' ? 'Chance de título' : 'Risco de rebaixamento'} ao longo do dia: ` + ns.map(n => `${n} de ${pct(B[n][k])} para ${pct(Nw[n][k])}`).join('; ') });
     ticks.forEach((v, i) => sv('line', { x1: m.l, x2: Wd - m.r, y1: Y(v), y2: Y(v), class: i === 0 ? 'base' : 'grid' }, svg));
     ticks.filter((v, i) => ticks.length <= 5 || i % 2 === 0 || i === ticks.length - 1).forEach(v => { const tx = sv('text', { x: m.l - 6, y: Y(v) + 4, 'text-anchor': 'end' }, svg); tx.textContent = Math.round(v * 100) + '%'; });
-    const span = x1 - x0, step = span <= 2.5 * 3600000 ? 30 * 60000 : (span <= 6 * 3600000 ? 3600000 : 2 * 3600000);
-    for (let t = Math.ceil(x0 / step) * step; t <= x1; t += step) { const tx = sv('text', { x: X(t), y: Ht - 6, 'text-anchor': 'middle' }, svg); tx.textContent = hm(t); }
+    // time labels inside each window, never crowding each other or a break; a break gets two short slanted strokes on the axis
+    const span = dur, step = span <= 2.5 * 3600000 ? 30 * 60000 : (span <= 6 * 3600000 ? 3600000 : 2 * 3600000);
+    let lastLx = -1e9;
+    segs.forEach(([a, b], i) => {
+      if (i) {
+        const gx = segX[i] - GAP / 2;
+        sv('rect', { x: gx - GAP / 2 + 2, y: m.t, width: GAP - 4, height: Y(lo) - m.t + 2, class: 'brk-bg' }, svg);
+        [-3, 3].forEach(d => sv('line', { x1: gx + d - 2.5, x2: gx + d + 2.5, y1: Y(lo) + 4, y2: Y(lo) - 4, class: 'brk' }, svg));
+      }
+      const xa = segX[i], xb = segX[i] + (b - a) * pxT;
+      let cand = []; for (let t = Math.ceil(a / step) * step; t <= b; t += step) cand.push(t);
+      if (!cand.length && b - a >= 20 * 60000) cand = [Math.round((a + (b - a) / 2) / (15 * 60000)) * 15 * 60000];
+      cand.forEach(t => { const x = X(t); if (x - lastLx < 34 || x < xa + 10 || x > xb - (i < segs.length - 1 ? 10 : 0)) return;
+        const tx = sv('text', { x, y: Ht - 6, 'text-anchor': 'middle' }, svg); tx.textContent = hm(t); lastLx = x; });
+    });
     if (!live.plan) appliedGames().forEach(g => (g.goals || []).forEach(gl => {
       const w = goalWall(g, gl); if (w <= x0 || w >= x1) return;
       sv('line', { x1: X(w), x2: X(w), y1: Y(lo), y2: Y(lo) - 6, class: 'goal' }, svg);
@@ -2545,8 +2594,8 @@ function makeEngine(D) {
     };
     const hide = () => { live.hover = null; xh.style.display = 'none'; tip.hidden = true; };
     const nearest = ev => {
-      const r = svg.getBoundingClientRect(), t = x0 + ((ev.clientX - r.left) / r.width * Wd - m.l) / (Wd - m.l - m.r) * (x1 - x0);
-      let bi = 0; pts.forEach((p, i) => { if (Math.abs(p.t - t) < Math.abs(pts[bi].t - t)) bi = i; }); return bi;
+      const r = svg.getBoundingClientRect(), x = (ev.clientX - r.left) / r.width * Wd;
+      let bi = 0; pts.forEach((p, i) => { if (Math.abs(X(p.t) - x) < Math.abs(X(pts[bi].t) - x)) bi = i; }); return bi;
     };
     hit.addEventListener('pointermove', ev => show(nearest(ev)));
     hit.addEventListener('pointerdown', ev => show(nearest(ev)));
